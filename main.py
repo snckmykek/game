@@ -6,9 +6,10 @@ from kivy.animation import Animation
 from kivy.app import App
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
-from kivy.clock import Clock
-from functools import partial
 from kivy.uix.stencilview import StencilView
+from kivy.uix.label import Label
+
+import random
 
 
 class Cube(Button):
@@ -25,10 +26,14 @@ class TestApp(App):
     def __init__(self, **kwargs):
         super(TestApp, self).__init__(**kwargs)
 
-        self.cols = 3
-        self.rows = 3
-        self.g = GridLayout(size_hint=(None, None), size=(300, 300), cols=1)
-        self.gridlayout = StencilView(size=(300, 300))
+        self.cols = 6
+        self.rows = 6
+        self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
+        self.score = 0
+        self.score_label = Label(text='0', size_hint_y=None, height=50)
+        self.g = GridLayout(size_hint=(None, None), size=(100 * self.cols, 100 * self.rows + 50), cols=1)
+        self.gridlayout = StencilView()
+        self.g.add_widget(self.score_label)
         self.g.add_widget(self.gridlayout)
 
         self.objects = list()
@@ -61,77 +66,166 @@ class TestApp(App):
         # Запускается анимация на перемещение по нужным координатам для всех кубов в строке или колонке
         for but in self.objects:
             if self.y_movement_blocked:
-                # if but.line == instance.line:
                 animation.animated_properties['pos'] = (round(but.pos[0] / instance.width) * instance.width, but.pos[1])
-                # else:
-                #     continue
             elif self.x_movement_blocked:
-                # if but.column == instance.column:
-                animation.animated_properties['pos'] = (but.pos[0], round(but.pos[1] / instance.height) * instance.height)
-                # else:
-                #     continue
+                animation.animated_properties['pos'] = (
+                    but.pos[0], round(but.pos[1] / instance.height) * instance.height)
             else:
                 continue
             animation.start(but)
 
+    def after_swipe2(self, animation, instance):
+        #???????????????????????????????????????????????????????????????????????????????????
+        column = instance.pos[0] / instance.width
+        line = instance.pos[1] / instance.height
+
+        new_pos = [0, 0]
+        if column > self.cols - .5:
+            instance.column = 0
+            new_pos = ((self.cols - 1 - column) * instance.width, instance.pos[1])
+        elif column < -.5:
+            instance.column = self.cols - 1
+            new_pos = ((self.cols - 1 + column) * instance.width, instance.pos[1])
+        elif line > self.rows - .5:
+            instance.line = 0
+            new_pos = (instance.pos[0], (self.rows - 1 - column) * instance.height)
+        elif line < -.5:
+            new_pos = (instance.pos[0], (self.rows - 1 + line) * instance.height)
+        else:
+            return
+
+
+        self.gridlayout.remove_widget(instance)
+        instance.pos = new_pos
+        instance.size = (10, 10)
+        self.gridlayout.add_widget(instance)
+        animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
+        animation.start(instance)
+
     def after_swipe(self, animation, instance):
-        pass
-        # if (instance.pos[0] + instance.width) // instance.width * instance.width > self.gridlayout.pos[0] \
-        #         + self.gridlayout.width:
-        #     self.gridlayout.remove_widget(instance)
-        #     button = Button(size_hint=(None, None), size=(10, 10),
-        #                     center_x=instance.center_x - instance.width * self.cols, center_y=instance.center_y,
-        #                     text='plop ' + str('new'), on_touch_move=self.animate, on_release=self.test)
-        #
-        #     instance.size = (10, 10)
-        #     instance.pos = (50, 50)
-        #     instance.center_x = instance.center_x - instance.width * self.cols
-        #
-        #     self.gridlayout.add_widget(instance)
-        #     animation = Animation(size=(100, 100), pos=(0, 0),
-        #                           d=0.1)
-        #     animation.start(instance)
+        instance.column = instance.pos[0] / instance.width
+        instance.line = instance.pos[1] / instance.height
+
+        if instance.column > self.cols - 1:
+            instance.column = 0
+        elif instance.column < 0:
+            instance.column = self.cols - 1
+        elif instance.line > self.rows - 1:
+            instance.line = 0
+        elif instance.line < 0:
+            instance.line = self.rows - 1
+        else:
+            return
+
+        self.gridlayout.remove_widget(instance)
+        instance.size = (10, 10)
+        instance.pos = (instance.column * 100, instance.line * 100)
+        self.gridlayout.add_widget(instance)
+        animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
+        animation.start(instance)
+        animation.bind(on_complete=self.boom)
+
+    def boom(self, animation, instance):
+        suicidal_cubes = list()
+
+        for obj in self.objects:
+            obj_prev_x = None
+            obj_next_x = None
+            obj_prev_y = None
+            obj_next_y = None
+            for o in self.objects:
+                if o.line == obj.line:
+                    if o.column == obj.column - 1:
+                        obj_prev_x = o
+                    if o.column == obj.column + 1:
+                        obj_next_x = o
+                if o.column == obj.column:
+                    if o.line == obj.line - 1:
+                        obj_prev_y = o
+                    if o.line == obj.line + 1:
+                        obj_next_y = o
+
+            if obj_prev_x and obj_next_x:
+                if (obj.background_color == obj_prev_x.background_color) \
+                        and (obj.background_color == obj_next_x.background_color):
+                    suicidal_cubes.extend([obj, obj_prev_x, obj_next_x])
+            if obj_prev_y and obj_next_y:
+                if (obj.background_color == obj_prev_y.background_color) \
+                        and (obj.background_color == obj_next_y.background_color):
+                    suicidal_cubes.extend([obj, obj_prev_y, obj_next_y])
+
+        for cube in set(suicidal_cubes):
+            self.score += 1 + (int(cube.text) if cube.text != '' else 0)
+            cube.text = ''
+            animation = Animation(size=(10, 10), d=0.2) + Animation(size=(100, 100), d=0.1)
+            animation.bind(on_complete=self.change_color)
+            animation.start(cube)
+
+        for boosted_cube in self.get_boosted_cube(set(suicidal_cubes)):
+            if boosted_cube.text != '':
+                if int(boosted_cube.text) == 5:
+                    continue
+                boosted_cube.text = str(int(boosted_cube.text) + 1)
+            else:
+                boosted_cube.text = str(1)
+
+        self.refresh_score_label()
+
+    def get_boosted_cube(self, cubes):
+        boosted_cubes = list()
+        for obj in cubes:
+            obj_prev_x = None
+            obj_next_x = None
+            obj_prev_y = None
+            obj_next_y = None
+            for o in self.objects:
+                if o.line == obj.line:
+                    if o.column == obj.column - 1:
+                        boosted_cubes.append(o)
+                    if o.column == obj.column + 1:
+                        boosted_cubes.append(o)
+                if o.column == obj.column:
+                    if o.line == obj.line - 1:
+                        boosted_cubes.append(o)
+                    if o.line == obj.line + 1:
+                        boosted_cubes.append(o)
+
+        return set(boosted_cubes) - cubes
+
+    def refresh_score_label(self):
+        self.score_label.text = str(self.score)
+
+    def change_color(self, animation, instance):
+        instance.background_color = self.colors[random.randint(0, len(self.colors) - 1)]
 
     def movement(self, instance, touch):
-        # print(touch.dx, touch.dy)
         if abs(touch.dx) > abs(touch.dy):
             if (instance.center_x - instance.width / 2) < touch.pos[0] < (instance.center_x + instance.width / 2) \
                     and instance.line == self.active_line and not self.x_movement_blocked:
                 self.y_movement_blocked = True
                 for but in self.objects:
                     if but.line == instance.line:
-                        but.pos[0] += touch.dx/2
+                        but.pos[0] += touch.dx / 2
+                        # self.after_swipe2('animation', but)
         elif abs(touch.dx) < abs(touch.dy):
             if (instance.center_y - instance.height / 2) < touch.pos[1] < (instance.center_y +
-                    instance.height / 2) and instance.column == self.active_column \
-                    and not self.y_movement_blocked:
+                    instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
                 self.x_movement_blocked = True
                 for but in self.objects:
                     if but.column == instance.column:
-                        but.pos[1] += touch.dy/2
-
-    def test(self, instance):
-        # self.gridlayout.remove_widget(self.gridlayout.children[1])
-        # button = Button(size_hint=(None, None), text='plop_new',
-        #                 on_touch_move=self.animate, on_release=self.test)
-        # self.gridlayout.children[2] = button
-        pass
+                        but.pos[1] += touch.dy / 2
+                        # self.after_swipe2('animation', but)
 
     def build(self):
 
-        coordinates = [
-            [(0, 0), (1, 0), (2, 0)],
-            [(0, 1), (1, 1), (2, 1)],
-            [(0, 2), (1, 2), (2, 2)]
-        ]
+        coordinates = list([tuple([x, y]) for x in (range(self.cols))] for y in (range(self.rows)))
 
         for i, row in enumerate(coordinates):
             for j, coords in enumerate(row):
                 button = Cube(size_hint=(None, None), size=(100, 100),
                               pos=list(map(lambda x, y: x * y, coords, (100, 100))),
-                              text='plop ' + str(i) + ", " + str(j),
-                              on_touch_move=self.movement, on_release=self.test,
-                              on_touch_down=self.down, on_touch_up=self.up)
+                              on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
+                button.background_color = self.colors[random.randint(0, len(self.colors) - 1)]
                 button.line = i
                 button.column = j
                 self.objects.append(button)
@@ -140,13 +234,6 @@ class TestApp(App):
             self.gridlayout.add_widget(obj)
 
         return self.g
-
-    # Работа со структурой Кубов
-    def get_coords(self, instance):
-        coords = tuple()
-        for row in self.objects:
-            for d in row:
-                pass
 
 
 if __name__ == '__main__':
