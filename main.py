@@ -2,6 +2,12 @@ import kivy
 
 kivy.require('1.0.7')
 
+from kivy.config import Config
+
+Config.set('graphics', 'resizable', '1')
+Config.set('graphics', 'width', '360')
+Config.set('graphics', 'height', '640')
+
 from kivy.animation import Animation
 from kivy.app import App
 from kivy.uix.button import Button
@@ -12,6 +18,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.lang.builder import Builder
 from kivy.clock import Clock
+from global_variables import WINDOW
 
 import random
 
@@ -52,10 +59,11 @@ class TestApp(App):
         # self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
         self.cube_pictures = ['images/images_1.png', 'images/images_2.png', 'images/images_3.png', 'images/images_4.png']
 
+        self.a = WINDOW.width / self.cols + 1
         self.score = 0
         self.score_label = Label(text=str(self.score), size_hint_y=None, height=50, color=(1, .5, 0, 1))
         self.swipes_label = Label(text=str(self.swipes), size_hint_y=None, height=50)
-        self.g = GridLayout(size_hint=(None, None), size=(100 * self.cols, 100 * self.rows + 50), cols=1)
+        self.g = GridLayout(size_hint=(None, None), size=(self.a * self.cols, self.a * self.rows + 50), cols=1)
         self.gridlayout = StencilView()
         b = BoxLayout(size_hint_y=None, height=50)
         b.add_widget(self.score_label)
@@ -148,7 +156,7 @@ class TestApp(App):
         for cube in set(suicidal_cubes):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
-            animation = Animation(size=(10, 10), d=0.15) + Animation(size=(100, 100), d=0.1)
+            animation = Animation(size=(10, 10), d=0.15) + Animation(size=(self.a, self.a), d=0.1)
             animation.bind(on_complete=self.change_color)
             animation.start(cube)
 
@@ -242,8 +250,8 @@ class TestApp(App):
         self.objects = list()
         for i, row in enumerate(coordinates):
             for j, coords in enumerate(row):
-                button = Cube(size_hint=(None, None), size=(100, 100),
-                              pos=list(map(lambda x, y: x * y, coords, (100, 100))),
+                button = Cube(size_hint=(None, None), size=(self.a, self.a),
+                              pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
                 button.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
                 button.line = i
