@@ -11,9 +11,9 @@ from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
 from kivy.lang.builder import Builder
+from kivy.clock import Clock
 
 import random
-
 
 Builder.load_file(r'mainscreen.kv')
 
@@ -68,6 +68,8 @@ class TestApp(App):
         self.active_column = None
         self.active_line = None
         self.auto_boom = False
+        self.touch_start = 0
+        self.touch_blocked = False
 
     def end_game(self):
         self.ge.score = self.score
@@ -79,10 +81,10 @@ class TestApp(App):
     def down(self, instance, touch):
         self.active_column = instance.column
         self.active_line = instance.line
+        self.touch_start = touch.ppos
 
     def up(self, instance, touch):
         self.auto_boom = False
-
         x = instance.center_x - instance.width / 2
         x2 = instance.center_x + instance.width / 2
         y = instance.center_y - instance.height / 2
@@ -97,78 +99,22 @@ class TestApp(App):
     def _move_line(self, instance, touch, *l):
 
         animation = Animation(d=0.1, pos=(0, 0))
-        animation.bind(on_complete=self.after_swipe)
 
+        self._block_touch(t=.2)
         # Запускается анимация на перемещение по нужным координатам для всех кубов в строке или колонке
         for but in self.objects:
             if self.y_movement_blocked:
-                animation.animated_properties['pos'] = (round(but.pos[0] / but.width) * but.width, but.pos[1])
+                but.column = round(but.pos[0] / but.width)
+                animation.animated_properties['pos'] = (but.column * but.width, but.pos[1])
             elif self.x_movement_blocked:
-                animation.animated_properties['pos'] = (
-                    but.pos[0], round(but.pos[1] / but.height) * but.height)
+                but.line = round(but.pos[1] / but.height)
+                animation.animated_properties['pos'] = (but.pos[0], but.line * but.height)
             else:
                 continue
             animation.start(but)
+        Clock.schedule_once(self.boom, .2)
 
-    def after_swipe2(self, animation, instance):
-        #???????????????????????????????????????????????????????????????????????????????????
-        column = instance.pos[0] / instance.width
-        line = instance.pos[1] / instance.height
-
-        new_pos = [0, 0]
-        if column > self.cols - .5:
-            instance.column = 0
-            new_pos = ((self.cols - 1 - column) * instance.width, instance.pos[1])
-        elif column < -.5:
-            instance.column = self.cols - 1
-            new_pos = ((self.cols - 1 - column) * instance.width, instance.pos[1])
-        elif line > self.rows - .5:
-            instance.line = 0
-            new_pos = (instance.pos[0], (self.rows - 1 - line) * instance.height)
-        elif line < -.5:
-            instance.line = self.rows - 1
-            new_pos = (instance.pos[0], (self.rows - 1 - line) * instance.height)
-        else:
-            instance.column = round(column)
-            instance.line = round(line)
-            return
-
-        print(instance.column, instance.line)
-
-        instance.pos = new_pos
-
-        # self.gridlayout.remove_widget(instance)
-        # instance.pos = new_pos
-        # instance.size = (10, 10)
-        # self.gridlayout.add_widget(instance)
-        # animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
-        # animation.start(instance)
-
-    def after_swipe(self, animation, instance):
-        # instance.column = instance.pos[0] / instance.width
-        # instance.line = instance.pos[1] / instance.height
-        #
-        # if instance.column > self.cols - 1:
-        #     instance.column = 0
-        # elif instance.column < 0:
-        #     instance.column = self.cols - 1
-        # elif instance.line > self.rows - 1:
-        #     instance.line = 0
-        # elif instance.line < 0:
-        #     instance.line = self.rows - 1
-        # else:
-        #     return
-        #
-        # self.gridlayout.remove_widget(instance)
-        # instance.size = (10, 10)
-        # instance.pos = (instance.column * 100, instance.line * 100)
-        # self.gridlayout.add_widget(instance)
-        # animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
-        # animation.start(instance)
-        # animation.bind(on_complete=
-        self.boom(animation, instance)
-
-    def boom(self, animation, instance):
+    def boom(self, instance, *l):
         suicidal_cubes = list()
 
         for obj in self.objects:
@@ -197,20 +143,20 @@ class TestApp(App):
                         and (obj.background_color == obj_next_y.background_color):
                     suicidal_cubes.extend([obj, obj_prev_y, obj_next_y])
 
+        self._block_touch(t=.3)
         for cube in set(suicidal_cubes):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
-            animation = Animation(size=(10, 10), d=0.2) + Animation(size=(100, 100), d=0.1)
+            animation = Animation(size=(10, 10), d=0.15) + Animation(size=(100, 100), d=0.1)
             animation.bind(on_complete=self.change_color)
             animation.start(cube)
 
-        if set(suicidal_cubes):  # Перепилить на просто отложенный вызов
+        if set(suicidal_cubes):
             if not self.auto_boom:
                 self.swipes -= 1
                 self.auto_boom = True
-            anim = Animation(d=.4)
-            anim.bind(on_complete=self.boom)
-            anim.start(cube)
+            self._block_touch(t=.6)
+            Clock.schedule_once(self.boom, .6)
         else:
             if self.swipes <= 0:
                 self.end_game()
@@ -224,6 +170,13 @@ class TestApp(App):
                 boosted_cube.text = str(1)
 
         self.refresh_score_label()
+
+    def _block_touch(self, *l, t=.6):
+        self.touch_blocked = True
+        Clock.schedule_once(self._unblock_touch, t)
+
+    def _unblock_touch(self, *l):
+        self.touch_blocked = False
 
     def get_boosted_cube(self, cubes):
         boosted_cubes = list()
@@ -254,22 +207,33 @@ class TestApp(App):
         instance.background_color = self.colors[random.randint(0, len(self.colors) - 1)]
 
     def movement(self, instance, touch):
+        if self.touch_blocked:
+            return
+
         if abs(touch.dx) > abs(touch.dy):
             if (instance.center_x - instance.width / 2) < touch.pos[0] < (instance.center_x + instance.width / 2) \
                     and instance.line == self.active_line and not self.x_movement_blocked:
                 self.y_movement_blocked = True
                 for but in self.objects:
                     if but.line == instance.line:
-                        but.pos[0] += touch.dx / 2
-                        self.after_swipe2('animation', but)
+                        new_pos_x = (touch.pos[0] - self.touch_start[0]) + but.column * but.width
+                        if new_pos_x > self.cols * but.width - but.width / 2:
+                            new_pos_x -= self.cols * but.width
+                        elif new_pos_x < - but.width / 2:
+                            new_pos_x += self.cols * but.width
+                        but.pos[0] = new_pos_x
         elif abs(touch.dx) < abs(touch.dy):
             if (instance.center_y - instance.height / 2) < touch.pos[1] < (instance.center_y +
-                    instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
+                                                                           instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
                 self.x_movement_blocked = True
                 for but in self.objects:
                     if but.column == instance.column:
-                        but.pos[1] += touch.dy / 2
-                        self.after_swipe2('animation', but)
+                        new_pos_y = (touch.pos[1] - self.touch_start[1]) + but.line * but.height
+                        if new_pos_y > self.rows * but.height - but.height / 2:
+                            new_pos_y -= self.rows * but.height
+                        elif new_pos_y < - but.height / 2:
+                            new_pos_y += self.rows * but.height
+                        but.pos[1] = new_pos_y
 
     def build(self):
 
