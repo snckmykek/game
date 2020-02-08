@@ -49,7 +49,8 @@ class TestApp(App):
         self.rows = 5  # Столбцы
         self.swipes = 20  # Количество ходов
         # Цвета, можно добавить. Заполняются рандомно из этого списка. Пока 4 цвета.
-        self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
+        # self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
+        self.cube_pictures = ['images/images_1.png', 'images/images_2.png', 'images/images_3.png', 'images/images_4.png']
 
         self.score = 0
         self.score_label = Label(text=str(self.score), size_hint_y=None, height=50, color=(1, .5, 0, 1))
@@ -135,12 +136,12 @@ class TestApp(App):
                         obj_next_y = o
 
             if obj_prev_x and obj_next_x:
-                if (obj.background_color == obj_prev_x.background_color) \
-                        and (obj.background_color == obj_next_x.background_color):
+                if (obj.background_normal == obj_prev_x.background_normal) \
+                        and (obj.background_normal == obj_next_x.background_normal):
                     suicidal_cubes.extend([obj, obj_prev_x, obj_next_x])
             if obj_prev_y and obj_next_y:
-                if (obj.background_color == obj_prev_y.background_color) \
-                        and (obj.background_color == obj_next_y.background_color):
+                if (obj.background_normal == obj_prev_y.background_normal) \
+                        and (obj.background_normal == obj_next_y.background_normal):
                     suicidal_cubes.extend([obj, obj_prev_y, obj_next_y])
 
         self._block_touch(t=.3)
@@ -204,7 +205,7 @@ class TestApp(App):
         self.swipes_label.text = str(self.swipes)
 
     def change_color(self, animation, instance):
-        instance.background_color = self.colors[random.randint(0, len(self.colors) - 1)]
+        instance.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
 
     def movement(self, instance, touch):
         if self.touch_blocked:
@@ -244,7 +245,7 @@ class TestApp(App):
                 button = Cube(size_hint=(None, None), size=(100, 100),
                               pos=list(map(lambda x, y: x * y, coords, (100, 100))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
-                button.background_color = self.colors[random.randint(0, len(self.colors) - 1)]
+                button.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
                 button.line = i
                 button.column = j
                 self.objects.append(button)
