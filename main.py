@@ -11,10 +11,8 @@ Config.set('graphics', 'height', '640')
 from kivy.animation import Animation
 from kivy.app import App
 from kivy.uix.button import Button
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.stencilview import StencilView
-from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
 from kivy.lang.builder import Builder
 from kivy.clock import Clock
@@ -25,30 +23,10 @@ import random
 Builder.load_file(r'mainscreen.kv')
 
 
-class GameEnding(ModalView):
+class CubesGame(BoxLayout):
 
-    def __init__(self, **kwargs):
-        super(GameEnding, self).__init__(**kwargs)
-
-        self.score = 0
-
-    def on_pre_open(self):
-        self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
-
-
-class Cube(Button):
-
-    def __init__(self, **kwargs):
-        super(Cube, self).__init__(**kwargs)
-
-        self.column = 0
-        self.line = 0
-
-
-class TestApp(App):
-
-    def __init__(self, **kwargs):
-        super(TestApp, self).__init__(**kwargs)
+    def __init__(self, ** kwargs):
+        super(CubesGame, self).__init__(**kwargs)
 
         self.ge = GameEnding()
 
@@ -59,32 +37,32 @@ class TestApp(App):
         # self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
         self.cube_pictures = ['images/images_1.png', 'images/images_2.png', 'images/images_3.png', 'images/images_4.png']
 
-        self.a = WINDOW.width / self.cols + 1
+        self.a = WINDOW.width / (self.cols + 1)
         self.score = 0
-        self.score_label = Label(text=str(self.score), size_hint_y=None, height=50, color=(1, .5, 0, 1))
-        self.swipes_label = Label(text=str(self.swipes), size_hint_y=None, height=50)
-        self.g = GridLayout(size_hint=(None, None), size=(self.a * self.cols, self.a * self.rows + 50), cols=1)
-        self.gridlayout = StencilView()
-        b = BoxLayout(size_hint_y=None, height=50)
-        b.add_widget(self.score_label)
-        b.add_widget(self.swipes_label)
-        self.g.add_widget(b)
-        self.g.add_widget(self.gridlayout)
+        self.score_label = self.ids.score_label
+        self.swipes_label = self.ids.swipes_label
+        self.status_board()
+        self.playing_field = self.ids.playing_field
+        # self.playing_field.size = (self.a * self.cols, self.a * self.rows)
+        self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
+        self.starting_point = None
 
         self.objects = list()
         self.x_movement_blocked = False
         self.y_movement_blocked = False
         self.active_column = None
         self.active_line = None
-        self.auto_boom = False
         self.touch_start = 0
         self.touch_blocked = False
+        self.touch_is_down = False
+
+        self.start_game()
 
     def end_game(self):
         self.ge.score = self.score
+        self.ge.game = self
         self.score = 0
         self.swipes = 20
-        self.build()
         self.ge.open()
 
     def down(self, instance, touch):
@@ -92,8 +70,24 @@ class TestApp(App):
         self.active_line = instance.line
         self.touch_start = touch.ppos
 
+        self.touch_is_down = True
+
+        if not self.starting_point:  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
+            self.starting_point = StartingPoint()
+            self.starting_point.pos = [s - self.starting_point.width / 2 for s in touch.pos]
+            self.playing_field.add_widget(self.starting_point)
+
     def up(self, instance, touch):
-        self.auto_boom = False
+        if self.starting_point:
+            self.playing_field.remove_widget(self.starting_point)
+            self.starting_point = None
+
+        if (abs(touch.pos[0] - self.touch_start[0]) > instance.width / 2) \
+                or (abs(touch.pos[1] - self.touch_start[1]) > instance.width / 2):
+            if self.touch_is_down:
+                self.swipes -= 1
+        self.touch_is_down = False
+
         x = instance.center_x - instance.width / 2
         x2 = instance.center_x + instance.width / 2
         y = instance.center_y - instance.height / 2
@@ -109,7 +103,7 @@ class TestApp(App):
 
         animation = Animation(d=0.1, pos=(0, 0))
 
-        self._block_touch(t=.2)
+        self.touch_blocked = True
         # Запускается анимация на перемещение по нужным координатам для всех кубов в строке или колонке
         for but in self.objects:
             if self.y_movement_blocked:
@@ -152,7 +146,7 @@ class TestApp(App):
                         and (obj.background_normal == obj_next_y.background_normal):
                     suicidal_cubes.extend([obj, obj_prev_y, obj_next_y])
 
-        self._block_touch(t=.3)
+        self.touch_blocked = True
         for cube in set(suicidal_cubes):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
@@ -161,12 +155,9 @@ class TestApp(App):
             animation.start(cube)
 
         if set(suicidal_cubes):
-            if not self.auto_boom:
-                self.swipes -= 1
-                self.auto_boom = True
-            self._block_touch(t=.6)
             Clock.schedule_once(self.boom, .6)
         else:
+            self.touch_blocked = False
             if self.swipes <= 0:
                 self.end_game()
 
@@ -178,14 +169,7 @@ class TestApp(App):
             else:
                 boosted_cube.text = str(1)
 
-        self.refresh_score_label()
-
-    def _block_touch(self, *l, t=.6):
-        self.touch_blocked = True
-        Clock.schedule_once(self._unblock_touch, t)
-
-    def _unblock_touch(self, *l):
-        self.touch_blocked = False
+        self.status_board()
 
     def get_boosted_cube(self, cubes):
         boosted_cubes = list()
@@ -208,15 +192,19 @@ class TestApp(App):
 
         return set(boosted_cubes) - cubes
 
-    def refresh_score_label(self):
+    def status_board(self):
         self.score_label.text = str(self.score)
         self.swipes_label.text = str(self.swipes)
 
     def change_color(self, animation, instance):
         instance.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
+        instance.background_down = instance.background_normal
 
     def movement(self, instance, touch):
         if self.touch_blocked:
+            return
+
+        if not self.playing_field.collide_point(*touch.pos):
             return
 
         if abs(touch.dx) > abs(touch.dy):
@@ -244,8 +232,7 @@ class TestApp(App):
                             new_pos_y += self.rows * but.height
                         but.pos[1] = new_pos_y
 
-    def build(self):
-
+    def start_game(self):
         coordinates = list([tuple([x, y]) for x in (range(self.cols))] for y in (range(self.rows)))
         self.objects = list()
         for i, row in enumerate(coordinates):
@@ -254,16 +241,57 @@ class TestApp(App):
                               pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
                 button.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
+                button.background_down = button.background_normal
                 button.line = i
                 button.column = j
                 self.objects.append(button)
 
-        self.gridlayout.clear_widgets()
+        self.playing_field.clear_widgets()
         for obj in self.objects:
-            self.gridlayout.add_widget(obj)
+            self.playing_field.add_widget(obj)
 
-        return self.g
+
+class GameEnding(ModalView):
+
+    def __init__(self, **kwargs):
+        super(GameEnding, self).__init__(**kwargs)
+
+        self.score = 0
+        self.game = ''
+
+    def on_pre_open(self):
+        self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
+
+    def on_pre_dismiss(self):
+        self.game.start_game()
+
+
+class Cube(Button):
+
+    def __init__(self, **kwargs):
+        super(Cube, self).__init__(**kwargs)
+
+        self.column = 0
+        self.line = 0
+
+
+class StartingPoint(Label):
+
+    def __init__(self, **kwargs):
+        super(StartingPoint, self).__init__(**kwargs)
+
+        self.size = (WINDOW.width / 20, WINDOW.width / 20)
+
+
+class CubesApp(App):
+
+    def __init__(self, **kwargs):
+        super(CubesApp, self).__init__(**kwargs)
+
+    def build(self):
+        a = CubesGame()
+        return a
 
 
 if __name__ == '__main__':
-    TestApp().run()
+    CubesApp().run()
