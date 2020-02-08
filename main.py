@@ -69,6 +69,13 @@ class TestApp(App):
         self.active_line = None
         self.auto_boom = False
 
+    def end_game(self):
+        self.ge.score = self.score
+        self.score = 0
+        self.swipes = 20
+        self.build()
+        self.ge.open()
+
     def down(self, instance, touch):
         self.active_column = instance.column
         self.active_line = instance.line
@@ -95,10 +102,10 @@ class TestApp(App):
         # Запускается анимация на перемещение по нужным координатам для всех кубов в строке или колонке
         for but in self.objects:
             if self.y_movement_blocked:
-                animation.animated_properties['pos'] = (round(but.pos[0] / instance.width) * instance.width, but.pos[1])
+                animation.animated_properties['pos'] = (round(but.pos[0] / but.width) * but.width, but.pos[1])
             elif self.x_movement_blocked:
                 animation.animated_properties['pos'] = (
-                    but.pos[0], round(but.pos[1] / instance.height) * instance.height)
+                    but.pos[0], round(but.pos[1] / but.height) * but.height)
             else:
                 continue
             animation.start(but)
@@ -114,45 +121,52 @@ class TestApp(App):
             new_pos = ((self.cols - 1 - column) * instance.width, instance.pos[1])
         elif column < -.5:
             instance.column = self.cols - 1
-            new_pos = ((self.cols - 1 + column) * instance.width, instance.pos[1])
+            new_pos = ((self.cols - 1 - column) * instance.width, instance.pos[1])
         elif line > self.rows - .5:
             instance.line = 0
-            new_pos = (instance.pos[0], (self.rows - 1 - column) * instance.height)
+            new_pos = (instance.pos[0], (self.rows - 1 - line) * instance.height)
         elif line < -.5:
-            new_pos = (instance.pos[0], (self.rows - 1 + line) * instance.height)
+            instance.line = self.rows - 1
+            new_pos = (instance.pos[0], (self.rows - 1 - line) * instance.height)
         else:
+            instance.column = round(column)
+            instance.line = round(line)
             return
 
+        print(instance.column, instance.line)
 
-        self.gridlayout.remove_widget(instance)
         instance.pos = new_pos
-        instance.size = (10, 10)
-        self.gridlayout.add_widget(instance)
-        animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
-        animation.start(instance)
+
+        # self.gridlayout.remove_widget(instance)
+        # instance.pos = new_pos
+        # instance.size = (10, 10)
+        # self.gridlayout.add_widget(instance)
+        # animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
+        # animation.start(instance)
 
     def after_swipe(self, animation, instance):
-        instance.column = instance.pos[0] / instance.width
-        instance.line = instance.pos[1] / instance.height
-
-        if instance.column > self.cols - 1:
-            instance.column = 0
-        elif instance.column < 0:
-            instance.column = self.cols - 1
-        elif instance.line > self.rows - 1:
-            instance.line = 0
-        elif instance.line < 0:
-            instance.line = self.rows - 1
-        else:
-            return
-
-        self.gridlayout.remove_widget(instance)
-        instance.size = (10, 10)
-        instance.pos = (instance.column * 100, instance.line * 100)
-        self.gridlayout.add_widget(instance)
-        animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
-        animation.start(instance)
-        animation.bind(on_complete=self.boom)
+        # instance.column = instance.pos[0] / instance.width
+        # instance.line = instance.pos[1] / instance.height
+        #
+        # if instance.column > self.cols - 1:
+        #     instance.column = 0
+        # elif instance.column < 0:
+        #     instance.column = self.cols - 1
+        # elif instance.line > self.rows - 1:
+        #     instance.line = 0
+        # elif instance.line < 0:
+        #     instance.line = self.rows - 1
+        # else:
+        #     return
+        #
+        # self.gridlayout.remove_widget(instance)
+        # instance.size = (10, 10)
+        # instance.pos = (instance.column * 100, instance.line * 100)
+        # self.gridlayout.add_widget(instance)
+        # animation = Animation(size=(100, 100), pos=instance.pos, d=0.1)
+        # animation.start(instance)
+        # animation.bind(on_complete=
+        self.boom(animation, instance)
 
     def boom(self, animation, instance):
         suicidal_cubes = list()
@@ -199,8 +213,7 @@ class TestApp(App):
             anim.start(cube)
         else:
             if self.swipes <= 0:
-                self.ge.score = self.score
-                self.ge.open()
+                self.end_game()
 
         for boosted_cube in self.get_boosted_cube(set(suicidal_cubes)):
             if boosted_cube.text != '':
@@ -248,7 +261,7 @@ class TestApp(App):
                 for but in self.objects:
                     if but.line == instance.line:
                         but.pos[0] += touch.dx / 2
-                        # self.after_swipe2('animation', but)
+                        self.after_swipe2('animation', but)
         elif abs(touch.dx) < abs(touch.dy):
             if (instance.center_y - instance.height / 2) < touch.pos[1] < (instance.center_y +
                     instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
@@ -256,12 +269,12 @@ class TestApp(App):
                 for but in self.objects:
                     if but.column == instance.column:
                         but.pos[1] += touch.dy / 2
-                        # self.after_swipe2('animation', but)
+                        self.after_swipe2('animation', but)
 
     def build(self):
 
         coordinates = list([tuple([x, y]) for x in (range(self.cols))] for y in (range(self.rows)))
-
+        self.objects = list()
         for i, row in enumerate(coordinates):
             for j, coords in enumerate(row):
                 button = Cube(size_hint=(None, None), size=(100, 100),
@@ -272,6 +285,7 @@ class TestApp(App):
                 button.column = j
                 self.objects.append(button)
 
+        self.gridlayout.clear_widgets()
         for obj in self.objects:
             self.gridlayout.add_widget(obj)
 
