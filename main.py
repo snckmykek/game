@@ -45,11 +45,13 @@ class TestApp(App):
 
         self.ge = GameEnding()
 
-        self.cols = 6
-        self.rows = 6
-        self.swipes = 1
-        self.score = 0
+        self.cols = 5  # Колонки
+        self.rows = 5  # Столбцы
+        self.swipes = 20  # Количество ходов
+        # Цвета, можно добавить. Заполняются рандомно из этого списка. Пока 4 цвета.
         self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
+
+        self.score = 0
         self.score_label = Label(text=str(self.score), size_hint_y=None, height=50, color=(1, .5, 0, 1))
         self.swipes_label = Label(text=str(self.swipes), size_hint_y=None, height=50)
         self.g = GridLayout(size_hint=(None, None), size=(100 * self.cols, 100 * self.rows + 50), cols=1)
