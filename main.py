@@ -161,6 +161,11 @@ class TestApp(App):
             animation.bind(on_complete=self.change_color)
             animation.start(cube)
 
+        if set(suicidal_cubes):  # Перепилить на просто отложенный вызов
+            anim = Animation(d=.4)
+            anim.bind(on_complete=self.boom)
+            anim.start(cube)
+
         for boosted_cube in self.get_boosted_cube(set(suicidal_cubes)):
             if boosted_cube.text != '':
                 if int(boosted_cube.text) == 5:
