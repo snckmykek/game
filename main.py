@@ -8,8 +8,25 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.stencilview import StencilView
 from kivy.uix.label import Label
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.modalview import ModalView
+from kivy.lang.builder import Builder
 
 import random
+
+
+Builder.load_file(r'mainscreen.kv')
+
+
+class GameEnding(ModalView):
+
+    def __init__(self, **kwargs):
+        super(GameEnding, self).__init__(**kwargs)
+
+        self.score = 0
+
+    def on_pre_open(self):
+        self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
 
 
 class Cube(Button):
@@ -26,14 +43,21 @@ class TestApp(App):
     def __init__(self, **kwargs):
         super(TestApp, self).__init__(**kwargs)
 
+        self.ge = GameEnding()
+
         self.cols = 6
         self.rows = 6
-        self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
+        self.swipes = 1
         self.score = 0
-        self.score_label = Label(text='0', size_hint_y=None, height=50)
+        self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
+        self.score_label = Label(text=str(self.score), size_hint_y=None, height=50, color=(1, .5, 0, 1))
+        self.swipes_label = Label(text=str(self.swipes), size_hint_y=None, height=50)
         self.g = GridLayout(size_hint=(None, None), size=(100 * self.cols, 100 * self.rows + 50), cols=1)
         self.gridlayout = StencilView()
-        self.g.add_widget(self.score_label)
+        b = BoxLayout(size_hint_y=None, height=50)
+        b.add_widget(self.score_label)
+        b.add_widget(self.swipes_label)
+        self.g.add_widget(b)
         self.g.add_widget(self.gridlayout)
 
         self.objects = list()
@@ -41,12 +65,15 @@ class TestApp(App):
         self.y_movement_blocked = False
         self.active_column = None
         self.active_line = None
+        self.auto_boom = False
 
     def down(self, instance, touch):
         self.active_column = instance.column
         self.active_line = instance.line
 
     def up(self, instance, touch):
+        self.auto_boom = False
+
         x = instance.center_x - instance.width / 2
         x2 = instance.center_x + instance.width / 2
         y = instance.center_y - instance.height / 2
@@ -162,9 +189,16 @@ class TestApp(App):
             animation.start(cube)
 
         if set(suicidal_cubes):  # Перепилить на просто отложенный вызов
+            if not self.auto_boom:
+                self.swipes -= 1
+                self.auto_boom = True
             anim = Animation(d=.4)
             anim.bind(on_complete=self.boom)
             anim.start(cube)
+        else:
+            if self.swipes <= 0:
+                self.ge.score = self.score
+                self.ge.open()
 
         for boosted_cube in self.get_boosted_cube(set(suicidal_cubes)):
             if boosted_cube.text != '':
@@ -199,6 +233,7 @@ class TestApp(App):
 
     def refresh_score_label(self):
         self.score_label.text = str(self.score)
+        self.swipes_label.text = str(self.swipes)
 
     def change_color(self, animation, instance):
         instance.background_color = self.colors[random.randint(0, len(self.colors) - 1)]
