@@ -32,6 +32,7 @@ class Menu(BoxLayout):
         self.cubes_game = CubesGame()
 
     def play(self):
+        self.cubes_game.start_game()
         self.cubes_game.open()
 
 
@@ -98,8 +99,8 @@ class CubesGame(ModalView):
             self.playing_field.remove_widget(self.starting_point)
             self.starting_point = None
 
-        if (abs(touch.pos[0] - self.touch_start[0]) > instance.width / 2) \
-                or (abs(touch.pos[1] - self.touch_start[1]) > instance.width / 2):
+        if ((abs(touch.pos[0] - self.touch_start[0]) > instance.width / 2) and self.y_movement_blocked) \
+                or ((abs(touch.pos[1] - self.touch_start[1]) > instance.width / 2) and self.x_movement_blocked):
             if self.touch_is_down and not self.touch_blocked:
                 self.swipes -= 1
         self.touch_is_down = False
@@ -211,7 +212,7 @@ class CubesGame(ModalView):
         self.swipes_label.text = str(self.swipes)
 
     def change_color(self, animation, instance):
-        instance.background_normal = self.cube_pictures[random.randint(0, 1)] #len(self.cube_pictures) - 1)]
+        instance.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
         instance.background_down = instance.background_normal
 
     def movement(self, instance, touch):
@@ -248,8 +249,14 @@ class CubesGame(ModalView):
                             new_pos_y += self.rows * but.height
                         but.pos[1] = new_pos_y
 
-    def start_game(self):
-        self.swipes = 20
+    def start_game(self, cols=5, rows=5, swipes=20, cubes=None):
+        self.cols = cols
+        self.rows = rows
+        self.swipes = swipes
+        self.a = WINDOW.width / (self.cols + 1)
+        self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
+        if cubes:
+            pass  # stub
         self.score = 0
         self.update_status_board()
 
@@ -260,7 +267,7 @@ class CubesGame(ModalView):
                 button = Cube(size_hint=(None, None), size=(self.a, self.a),
                               pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
-                button.background_normal = self.cube_pictures[random.randint(0, 1)]#len(self.cube_pictures) - 1)]
+                button.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
                 button.background_down = button.background_normal
                 button.line = i
                 button.column = j
