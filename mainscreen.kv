@@ -1,92 +1,151 @@
 #:import WINDOW global_variables.WINDOW
 
-<CubesGame>:
+<Menu>:
     orientation: 'vertical'
-    BoxLayout:
-        orientation: 'vertical'
-        size_hint_y: None
-        height: WINDOW.height - (rl.height + (WINDOW.width / 6) * 3)
-        canvas:
+    spacing: WINDOW.width / 12
+    canvas:
+        Color:
+            rgba: (.36, .17, .05, 1)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    Label:
+        text: 'Cubes'
+        color: (1, .5, 0, 1)
+        canvas.before:
             Color:
-                rgba: (.36, .17, .05, 1)
+                rgba: (.25, .09, .02, 1)
             Rectangle:
                 size: self.size
                 pos: self.pos
-        BoxLayout: # status board
-            size_hint_y: None
-            height: WINDOW.width / 6
-            canvas:
-                Color:
-                    rgba: (.30, .12, .03, 1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-            Label:
-                text: 'Score: '
-            Label:
-                id: score_label
-                color: 1, .5, 0, 1
-            Label:
-                text: 'Swipe: '
-            Label:
-                id: swipes_label
-                color: 1, .5, 0, 1
-        Label:
-            text: ''
-
-    BoxLayout:
-        orientation: 'vertical'
-        size_hint_y: None
-        height: rl.height + (WINDOW.width / 6) * 2
-        BoxLayout: # status board
-            size_hint_y: None
-            height: WINDOW.width / 6
-            canvas:
-                Color:
-                    rgba: (.30, .12, .03, 1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-            Label:
-                text: 'bonus_1'
-            Label:
-                text: 'bonus_2'
-            Label:
-                text: 'bonus_3'
-            Label:
-                text: 'bonus_4'
-        AnchorLayout:
-            size_hint_y: None
-            height: rl.height + WINDOW.width / 6
-            canvas:
-                Color:
-                    rgba: (.36, .17, .05, 1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
-            anchor_x: 'center'
-            anchor_y: 'center'
-            RelativeLayout:
-                id: rl
-                size_hint: None, None
-                StencilView: # field with cubes
-                    id: playing_field
-                    canvas:
-                        Color:
-                            rgba: (.30, .12, .03, 1)
-                        Rectangle:
-                            size: self.size
-                            pos: self.pos
-
+    Button:
+        text: 'stub'
+        color: (1, .5, 0, 1)
+        background_normal:''
+        background_color: (.30, .12, .03, 1)
+    Button:
+        text: 'stub'
+        color: (1, .5, 0, 1)
+        background_normal:''
+        background_color: (.30, .12, .03, 1)
+    Button:
+        text: 'stub'
+        color: (1, .5, 0, 1)
+        background_normal:''
+        background_color: (.30, .12, .03, 1)
+    Button:
+        text: 'Play'
+        color: (1, .5, 0, 1)
+        background_normal:''
+        background_color: (.30, .12, .03, 1)
+        on_press: root.play()
     Widget:
-        size_hint_y: None
-        height: WINDOW.width / 6
         canvas:
             Color:
                 rgba: (.30, .12, .03, 1)
             Rectangle:
                 size: self.size
                 pos: self.pos
+
+
+<CubesGame>:
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: WINDOW.height - (rl.height + (WINDOW.width / 6) * 3)
+            canvas:
+                Color:
+                    rgba: (.36, .17, .05, 1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+            BoxLayout: # status board
+                size_hint_y: None
+                height: WINDOW.width / 6
+                canvas:
+                    Color:
+                        rgba: (.30, .12, .03, 1)
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                Button:
+                    text: 'back'
+                    color: (1, .5, 0, 1)
+                    background_normal: ''
+                    background_color: (.30, .12, .03, 1)
+                    on_press: root.dismiss()
+                Label:
+                    text: 'Score: '
+                    color: (1, .5, 0, 1)
+                Label:
+                    id: score_label
+                    color: (1, .5, 0, 1)
+                Label:
+                    text: 'Swipe: '
+                    color: (1, .5, 0, 1)
+                Label:
+                    id: swipes_label
+                    color: (1, .5, 0, 1)
+            Label:
+                text: ''
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: rl.height + (WINDOW.width / 6) * 2
+            BoxLayout: # status board
+                size_hint_y: None
+                height: WINDOW.width / 6
+                canvas:
+                    Color:
+                        rgba: (.30, .12, .03, 1)
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                Label:
+                    text: 'bonus_1'
+                    color: (1, .5, 0, 1)
+                Label:
+                    text: 'bonus_2'
+                    color: (1, .5, 0, 1)
+                Label:
+                    text: 'bonus_3'
+                    color: (1, .5, 0, 1)
+                Label:
+                    text: 'bonus_4'
+                    color: (1, .5, 0, 1)
+            AnchorLayout:
+                size_hint_y: None
+                height: rl.height + WINDOW.width / 6
+                canvas:
+                    Color:
+                        rgba: (.36, .17, .05, 1)
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                anchor_x: 'center'
+                anchor_y: 'center'
+                RelativeLayout:
+                    id: rl
+                    size_hint: None, None
+                    StencilView: # field with cubes
+                        id: playing_field
+                        canvas:
+                            Color:
+                                rgba: (.30, .12, .03, 1)
+                            Rectangle:
+                                size: self.size
+                                pos: self.pos
+        Widget:
+            size_hint_y: None
+            height: WINDOW.width / 6
+            canvas:
+                Color:
+                    rgba: (.30, .12, .03, 1)
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
 
 <StartingPoint>:
     size_hint: None, None

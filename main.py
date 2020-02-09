@@ -23,7 +23,18 @@ import random
 Builder.load_file(r'mainscreen.kv')
 
 
-class CubesGame(BoxLayout):
+class Menu(BoxLayout):
+
+    def __init__(self, **kwargs):
+        super(Menu, self).__init__(**kwargs)
+
+        self.cubes_game = CubesGame()
+
+    def play(self):
+        self.cubes_game.open()
+
+
+class CubesGame(ModalView):
 
     def __init__(self, ** kwargs):
         super(CubesGame, self).__init__(**kwargs)
@@ -33,15 +44,13 @@ class CubesGame(BoxLayout):
         self.cols = 5  # Колонки
         self.rows = 5  # Столбцы
         self.swipes = 20  # Количество ходов
-        # Цвета, можно добавить. Заполняются рандомно из этого списка. Пока 4 цвета.
-        # self.colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.6, .3, .8, 1)]
         self.cube_pictures = ['images/images_1.png', 'images/images_2.png', 'images/images_3.png', 'images/images_4.png']
 
         self.a = WINDOW.width / (self.cols + 1)
         self.score = 0
         self.score_label = self.ids.score_label
         self.swipes_label = self.ids.swipes_label
-        self.status_board()
+        self.update_status_board()
         self.playing_field = self.ids.playing_field
         # self.playing_field.size = (self.a * self.cols, self.a * self.rows)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
@@ -52,13 +61,14 @@ class CubesGame(BoxLayout):
         self.y_movement_blocked = False
         self.active_column = None
         self.active_line = None
-        self.touch_start = 0
+        self.touch_start = (0, 0)
         self.touch_blocked = False
         self.touch_is_down = False
 
+    def on_pre_open(self):
         self.start_game()
 
-    def end_game(self):
+    def end_game(self, *l):
         self.ge.score = self.score
         self.ge.game = self
         self.score = 0
@@ -84,7 +94,7 @@ class CubesGame(BoxLayout):
 
         if (abs(touch.pos[0] - self.touch_start[0]) > instance.width / 2) \
                 or (abs(touch.pos[1] - self.touch_start[1]) > instance.width / 2):
-            if self.touch_is_down:
+            if self.touch_is_down and not self.touch_blocked:
                 self.swipes -= 1
         self.touch_is_down = False
 
@@ -117,7 +127,7 @@ class CubesGame(BoxLayout):
             animation.start(but)
         Clock.schedule_once(self.boom, .2)
 
-    def boom(self, instance, *l):
+    def boom(self, instance=None, *l):
         suicidal_cubes = list()
 
         for obj in self.objects:
@@ -159,7 +169,7 @@ class CubesGame(BoxLayout):
         else:
             self.touch_blocked = False
             if self.swipes <= 0:
-                self.end_game()
+                Clock.schedule_once(self.end_game, .3)
 
         for boosted_cube in self.get_boosted_cube(set(suicidal_cubes)):
             if boosted_cube.text != '':
@@ -169,7 +179,7 @@ class CubesGame(BoxLayout):
             else:
                 boosted_cube.text = str(1)
 
-        self.status_board()
+        self.update_status_board()
 
     def get_boosted_cube(self, cubes):
         boosted_cubes = list()
@@ -192,7 +202,7 @@ class CubesGame(BoxLayout):
 
         return set(boosted_cubes) - cubes
 
-    def status_board(self):
+    def update_status_board(self):
         self.score_label.text = str(self.score)
         self.swipes_label.text = str(self.swipes)
 
@@ -233,6 +243,10 @@ class CubesGame(BoxLayout):
                         but.pos[1] = new_pos_y
 
     def start_game(self):
+        self.swipes = 20
+        self.score = 0
+        self.update_status_board()
+
         coordinates = list([tuple([x, y]) for x in (range(self.cols))] for y in (range(self.rows)))
         self.objects = list()
         for i, row in enumerate(coordinates):
@@ -249,6 +263,12 @@ class CubesGame(BoxLayout):
         self.playing_field.clear_widgets()
         for obj in self.objects:
             self.playing_field.add_widget(obj)
+
+        # Сделать так, чтобы при старте уже не было 3 в ряд не взорвавшихся
+        # Не работает, тк в буме есть отложенные события. Потом сделать кек
+        # self.boom()
+        # self.score = 0
+        # self.update_status_board()
 
 
 class GameEnding(ModalView):
@@ -289,8 +309,7 @@ class CubesApp(App):
         super(CubesApp, self).__init__(**kwargs)
 
     def build(self):
-        a = CubesGame()
-        return a
+        return Menu()
 
 
 if __name__ == '__main__':
