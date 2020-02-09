@@ -18,6 +18,7 @@ from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 from global_variables import WINDOW
+import math
 
 import random
 
@@ -75,8 +76,8 @@ class CubesGame(ModalView):
         self.prizes = list()
         self.x_movement_blocked = False
         self.y_movement_blocked = False
-        self.active_column = None
-        self.active_line = None
+        self.active_column = list()
+        self.active_line = list()
         self.touch_start = (0, 0)
         self.touch_blocked = False
         self.touch_is_down = False
@@ -91,8 +92,18 @@ class CubesGame(ModalView):
         if self.touch_blocked:
             return
 
-        self.active_column = instance.column
-        self.active_line = instance.line
+        if not instance.collide_point(*touch.pos):
+            return
+
+        print(instance.column, instance.line)
+        self.active_column.clear()
+        self.active_line.clear()
+        for cube in self.objects:
+            if cube.column == instance.column:
+                self.active_column.append(cube)
+            if cube.line == instance.line:
+                self.active_line.append(cube)
+
         self.touch_start = touch.ppos
 
         self.touch_is_down = True
@@ -117,15 +128,9 @@ class CubesGame(ModalView):
                 self.swipes -= 1
         self.touch_is_down = False
 
-        x = instance.center_x - instance.width / 2
-        x2 = instance.center_x + instance.width / 2
-        y = instance.center_y - instance.height / 2
-        y2 = instance.center_y + instance.height / 2
-        if (x < touch.pos[0] < x2 and self.y_movement_blocked) or (y < touch.pos[1] < y2 and self.x_movement_blocked) \
+        if self.y_movement_blocked or self.x_movement_blocked \
                 or (not self.playing_field.collide_point(*touch.pos) and not self.forced_up):
             self.forced_up = True
-            self.active_column = None
-            self.active_line = None
             self._move_line(instance, touch)
             self.x_movement_blocked = False
             self.y_movement_blocked = False
@@ -136,16 +141,22 @@ class CubesGame(ModalView):
 
         self.touch_blocked = True
         # Запускается анимация на перемещение по нужным координатам для всех кубов в строке или колонке
-        for but in self.objects:
-            if self.y_movement_blocked:
-                but.column = round(but.pos[0] / but.width)
+        is_rounding_up = None  # Эта наркомания обусловлена тем, что бывает подвисают координаты кнопок
+                                   # и соседние кнопки разъезжаются в разные стороны
+        if self.y_movement_blocked:
+            for but in self.active_line:
+                if is_rounding_up is None:
+                    is_rounding_up = round(but.pos[0] / but.width) == math.ceil(but.pos[0] / but.width)
+                but.column = math.ceil(but.pos[0] / but.width) if is_rounding_up else math.floor(but.pos[0] / but.width)
                 animation.animated_properties['pos'] = (but.column * but.width, but.pos[1])
-            elif self.x_movement_blocked:
-                but.line = round(but.pos[1] / but.height)
+                animation.start(but)
+        elif self.x_movement_blocked:
+            for but in self.active_column:
+                if is_rounding_up is None:
+                    is_rounding_up = round(but.pos[1] / but.height) == math.ceil(but.pos[1] / but.height)
+                but.line = math.ceil(but.pos[1] / but.height) if is_rounding_up else math.floor(but.pos[1] / but.height)
                 animation.animated_properties['pos'] = (but.pos[0], but.line * but.height)
-            else:
-                continue
-            animation.start(but)
+                animation.start(but)
         Clock.schedule_once(self.boom, .2)
 
     def boom(self, instance=None, *l):
@@ -263,30 +274,26 @@ class CubesGame(ModalView):
             return
 
         if (abs(touch.dx) > abs(touch.dy)) or self.y_movement_blocked:
-            if (instance.center_x - instance.width / 2) < touch.pos[0] < (instance.center_x + instance.width / 2) \
-                    and instance.line == self.active_line and not self.x_movement_blocked:
+            if (instance in self.active_line) and not self.x_movement_blocked:
                 self.y_movement_blocked = True
-                for but in self.objects:
-                    if but.line == instance.line:
-                        new_pos_x = (touch.pos[0] - self.touch_start[0]) + but.column * but.width
-                        if new_pos_x > self.cols * but.width - but.width / 2:
-                            new_pos_x -= self.cols * but.width
-                        elif new_pos_x < - but.width / 2:
-                            new_pos_x += self.cols * but.width
-                        but.pos[0] = new_pos_x
+                for but in self.active_line:
+                    new_pos_x = (touch.pos[0] - self.touch_start[0]) + but.column * but.width
+                    if new_pos_x > self.cols * but.width - but.width / 2:
+                        new_pos_x -= self.cols * but.width
+                    elif new_pos_x < - but.width / 2:
+                        new_pos_x += self.cols * but.width
+                    but.pos[0] = new_pos_x
 
         if (abs(touch.dx) < abs(touch.dy)) or self.x_movement_blocked:
-            if (instance.center_y - instance.height / 2) < touch.pos[1] < (instance.center_y +
-                    instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
+            if (instance in self.active_column) and not self.y_movement_blocked:
                 self.x_movement_blocked = True
-                for but in self.objects:
-                    if but.column == instance.column:
-                        new_pos_y = (touch.pos[1] - self.touch_start[1]) + but.line * but.height
-                        if new_pos_y > self.rows * but.height - but.height / 2:
-                            new_pos_y -= self.rows * but.height
-                        elif new_pos_y < - but.height / 2:
-                            new_pos_y += self.rows * but.height
-                        but.pos[1] = new_pos_y
+                for but in self.active_column:
+                    new_pos_y = (touch.pos[1] - self.touch_start[1]) + but.line * but.height
+                    if new_pos_y > self.rows * but.height - but.height / 2:
+                        new_pos_y -= self.rows * but.height
+                    elif new_pos_y < - but.height / 2:
+                        new_pos_y += self.rows * but.height
+                    but.pos[1] = new_pos_y
 
     def start_game(self, cols=5, rows=5, swipes=20, cubes=None):
         self.cols = cols
