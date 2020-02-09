@@ -71,6 +71,8 @@ class CubesGame(ModalView):
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
 
         self.objects = list()
+        self.background_objects = list()
+        self.prizes = list()
         self.x_movement_blocked = False
         self.y_movement_blocked = False
         self.active_column = None
@@ -183,6 +185,30 @@ class CubesGame(ModalView):
             animation.bind(on_complete=self.change_color)
             animation.start(cube)
 
+        copy_background_objects = self.background_objects.copy()
+        for background_obj in copy_background_objects:
+            for cube in set(suicidal_cubes):
+                if (background_obj.column == cube.column) and (background_obj.line == cube.line):
+                    self.background_objects.remove(background_obj)
+                    self.playing_field.remove_widget(background_obj)
+
+        copy_prizes = self.prizes.copy()
+        for prize in copy_prizes:
+            take_prize = True
+            for background_obj in self.background_objects:
+                if (background_obj.column in prize.column) and (background_obj.line in prize.line):
+                    take_prize = False
+            if take_prize:
+                self.playing_field.remove_widget(prize)
+                self.ids.rl.add_widget(prize)
+                self.prizes.remove(prize)
+                animation = Animation(size=(prize.size[0]*1.2, prize.size[1]*1.2), d=.4)
+                animation += Animation(size=prize.size, d=.4)
+                animation += Animation(size=(10, 10), d=.8) & Animation(pos=(self.ids.bonus_1.x,
+                                                                             self.ids.bonus_1.y), d=1.3)
+                animation.bind(on_complete=self.delete_prize)
+                animation.start(prize)
+
         if set(suicidal_cubes):
             Clock.schedule_once(self.boom, .6)
         else:
@@ -199,6 +225,9 @@ class CubesGame(ModalView):
                 boosted_cube.text = str(1)
 
         self.update_status_board()
+
+    def delete_prize(self, animation, instance):
+        self.ids.rl.remove_widget(instance)
 
     def get_boosted_cube(self, cubes):
         boosted_cubes = list()
@@ -283,7 +312,31 @@ class CubesGame(ModalView):
                 button.column = j
                 self.objects.append(button)
 
+        coordinates_background_objects = [[(0, 0), (1, 0)],
+                                          [(0, 1), (1, 1)]
+                                          ]
+        self.background_objects = list()
+        for i, row in enumerate(coordinates_background_objects):
+            for j, coords in enumerate(row):
+                button = Cube(size_hint=(None, None), size=(self.a, self.a),
+                              pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))))
+                button.line = i
+                button.column = j
+                button.background_normal = ''
+                button.background_color = (.82, .93, .51, 1)
+                self.background_objects.append(button)
+
+        self.prizes = list()
+        button = Cube(size_hint=(None, None), size=(self.a*2, self.a*2), pos=(0, 0))
+        button.column = [0, 1]
+        button.line = [0, 1]
+        self.prizes.append(button)
+
         self.playing_field.clear_widgets()
+        for obj in self.prizes:
+            self.playing_field.add_widget(obj)
+        for obj in self.background_objects:
+            self.playing_field.add_widget(obj)
         for obj in self.objects:
             self.playing_field.add_widget(obj)
 
