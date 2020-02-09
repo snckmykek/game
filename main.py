@@ -204,8 +204,8 @@ class CubesGame(ModalView):
                 self.prizes.remove(prize)
                 animation = Animation(size=(prize.size[0]*1.2, prize.size[1]*1.2), d=.4)
                 animation += Animation(size=prize.size, d=.4)
-                animation += Animation(size=(10, 10), d=.8) & Animation(pos=(self.ids.bonus_1.x,
-                                                                             self.ids.bonus_1.y), d=1.3)
+                animation += Animation(size=(10, 10), d=.8)
+                animation &= Animation(pos=(self.ids.bonus_1.center_x, self.ids.bonus_1.center_y), d=1.3)
                 animation.bind(on_complete=self.delete_prize)
                 animation.start(prize)
 
