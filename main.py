@@ -55,7 +55,7 @@ class CubesGame(ModalView):
         self.playing_field = self.ids.playing_field
         # self.playing_field.size = (self.a * self.cols, self.a * self.rows)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
-        self.starting_point = None
+        self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
 
         self.objects = list()
         self.x_movement_blocked = False
@@ -65,6 +65,7 @@ class CubesGame(ModalView):
         self.touch_start = (0, 0)
         self.touch_blocked = False
         self.touch_is_down = False
+        self.forced_up = False
 
     def on_pre_open(self):
         self.start_game()
@@ -82,8 +83,9 @@ class CubesGame(ModalView):
         self.touch_start = touch.ppos
 
         self.touch_is_down = True
+        self.forced_up = False
 
-        if not self.starting_point:  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
+        if not self.starting_point:
             self.starting_point = StartingPoint()
             self.starting_point.pos = [s - self.starting_point.width / 2 for s in touch.pos]
             self.playing_field.add_widget(self.starting_point)
@@ -103,7 +105,9 @@ class CubesGame(ModalView):
         x2 = instance.center_x + instance.width / 2
         y = instance.center_y - instance.height / 2
         y2 = instance.center_y + instance.height / 2
-        if (x < touch.pos[0] < x2 and self.y_movement_blocked) or (y < touch.pos[1] < y2 and self.x_movement_blocked):
+        if (x < touch.pos[0] < x2 and self.y_movement_blocked) or (y < touch.pos[1] < y2 and self.x_movement_blocked) \
+                or (not self.playing_field.collide_point(*touch.pos) and not self.forced_up):
+            self.forced_up = True
             self.active_column = None
             self.active_line = None
             self._move_line(instance, touch)
@@ -216,6 +220,7 @@ class CubesGame(ModalView):
             return
 
         if not self.playing_field.collide_point(*touch.pos):
+            self.up(instance, touch)
             return
 
         if (abs(touch.dx) > abs(touch.dy)) or self.y_movement_blocked:
