@@ -60,7 +60,7 @@ class CubesGame(ModalView):
         self.rows = 4  # Столбцы
         self.swipes = 20  # Количество ходов
         self.round_swipes = 20  # Это число не меняется в процессе игры (только при запуске) и при перезапуске используется
-        self.cube_pictures = ['images/images_1.png', 'images/images_2.png', 'images/images_3.png', 'images/images_4.png']
+        self.cube_colors = [(1, 0, 0, 1), (0, 1, 0, 1), (0, 0, 1, 1), (.8, 0, .87, 1)]
 
         self.a = WINDOW.width / (self.cols + 1)
         self.score = 0
@@ -69,7 +69,7 @@ class CubesGame(ModalView):
         self.update_status_board()
         self.playing_field = self.ids.playing_field
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
-        self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
+        self.cube_pattern = 'images/pattern.png'
 
         self.objects = list()
         self.background_objects = list()
@@ -82,6 +82,7 @@ class CubesGame(ModalView):
         self.touch_blocked = False
         self.touch_is_down = False
         self.forced_up = False
+        self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
 
     def end_game(self, *l):
         self.ge.score = self.score
@@ -180,12 +181,12 @@ class CubesGame(ModalView):
                         obj_next_y = o
 
             if obj_prev_x and obj_next_x:
-                if (obj.background_normal == obj_prev_x.background_normal) \
-                        and (obj.background_normal == obj_next_x.background_normal):
+                if (obj.background_color == obj_prev_x.background_color) \
+                        and (obj.background_color == obj_next_x.background_color):
                     suicidal_cubes.extend([obj, obj_prev_x, obj_next_x])
             if obj_prev_y and obj_next_y:
-                if (obj.background_normal == obj_prev_y.background_normal) \
-                        and (obj.background_normal == obj_next_y.background_normal):
+                if (obj.background_color == obj_prev_y.background_color) \
+                        and (obj.background_color == obj_next_y.background_color):
                     suicidal_cubes.extend([obj, obj_prev_y, obj_next_y])
 
         self.touch_blocked = True
@@ -262,8 +263,7 @@ class CubesGame(ModalView):
         self.swipes_label.text = str(self.swipes)
 
     def change_color(self, animation, instance):
-        instance.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
-        instance.background_down = instance.background_normal
+        instance.background_color = self.cube_colors[random.randint(0, len(self.cube_colors) - 1)]
 
     def movement(self, instance, touch):
         if self.touch_blocked:
@@ -313,8 +313,9 @@ class CubesGame(ModalView):
                 button = Cube(size_hint=(None, None), size=(self.a, self.a),
                               pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
-                button.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
-                button.background_down = button.background_normal
+                button.background_color = self.cube_colors[random.randint(0, len(self.cube_colors) - 1)]
+                button.background_normal = self.cube_pattern
+                button.background_down = self.cube_pattern
                 button.line = i
                 button.column = j
                 self.objects.append(button)
