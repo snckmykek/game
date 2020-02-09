@@ -18,11 +18,45 @@
             Rectangle:
                 size: self.size
                 pos: self.pos
-    Button:
-        text: 'stub'
-        color: (1, .5, 0, 1)
-        background_normal:''
-        background_color: (.30, .12, .03, 1)
+    BoxLayout:
+        size_hint_y: 2
+        orientation: 'vertical'
+        canvas.before:
+            Color:
+                rgba: (.25, .09, .02, 1)
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        Label:
+            text: 'for test'
+            color: (1, .5, 0, 1)
+        BoxLayout:
+            Label:
+                text: 'Cols: '
+                color: (1, .5, 0, 1)
+            TextInput:
+                id: playing_field_cols
+                text: '5'
+                background_color: (.30, .12, .03, 1)
+                color: (1, .5, 0, 1)
+        BoxLayout:
+            Label:
+                text: 'Rows: '
+                color: (1, .5, 0, 1)
+            TextInput:
+                id: playing_field_rows
+                text: '5'
+                background_color: (.30, .12, .03, 1)
+                color: (1, .5, 0, 1)
+        BoxLayout:
+            Label:
+                text: 'Swipe: '
+                color: (1, .5, 0, 1)
+            TextInput:
+                id: swipes
+                text: '20'
+                background_color: (.30, .12, .03, 1)
+                color: (1, .5, 0, 1)
     Button:
         text: 'stub'
         color: (1, .5, 0, 1)

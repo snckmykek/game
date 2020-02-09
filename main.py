@@ -32,7 +32,19 @@ class Menu(BoxLayout):
         self.cubes_game = CubesGame()
 
     def play(self):
-        self.cubes_game.start_game()
+        cols = 5
+        rows = 5
+        swipes = 20
+
+        try:
+            cols = int(self.ids.playing_field_cols.text)
+            rows = int(self.ids.playing_field_rows.text)
+            swipes = int(self.ids.swipes.text)
+        except ValueError:
+            pass
+
+        self.cubes_game.round_swipes = swipes
+        self.cubes_game.start_game(cols if cols <= 10 else 5, rows if rows <= 10 else 5, swipes)
         self.cubes_game.open()
 
 
@@ -43,9 +55,10 @@ class CubesGame(ModalView):
 
         self.ge = GameEnding()
 
-        self.cols = 5  # Колонки
-        self.rows = 5  # Столбцы
+        self.cols = 4  # Колонки
+        self.rows = 4  # Столбцы
         self.swipes = 20  # Количество ходов
+        self.round_swipes = 20  # Это число не меняется в процессе игры (только при запуске) и при перезапуске используется
         self.cube_pictures = ['images/images_1.png', 'images/images_2.png', 'images/images_3.png', 'images/images_4.png']
 
         self.a = WINDOW.width / (self.cols + 1)
@@ -54,7 +67,6 @@ class CubesGame(ModalView):
         self.swipes_label = self.ids.swipes_label
         self.update_status_board()
         self.playing_field = self.ids.playing_field
-        # self.playing_field.size = (self.a * self.cols, self.a * self.rows)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
 
@@ -71,8 +83,6 @@ class CubesGame(ModalView):
     def end_game(self, *l):
         self.ge.score = self.score
         self.ge.game = self
-        self.score = 0
-        self.swipes = 20
         self.ge.open()
 
     def down(self, instance, touch):
@@ -238,7 +248,7 @@ class CubesGame(ModalView):
 
         if (abs(touch.dx) < abs(touch.dy)) or self.x_movement_blocked:
             if (instance.center_y - instance.height / 2) < touch.pos[1] < (instance.center_y +
-                                                                           instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
+                    instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
                 self.x_movement_blocked = True
                 for but in self.objects:
                     if but.column == instance.column:
@@ -253,7 +263,7 @@ class CubesGame(ModalView):
         self.cols = cols
         self.rows = rows
         self.swipes = swipes
-        self.a = WINDOW.width / (self.cols + 1)
+        self.a = WINDOW.width / (self.cols if self.cols >= self.rows else self.rows + 1)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         if cubes:
             pass  # stub
@@ -296,7 +306,7 @@ class GameEnding(ModalView):
         self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
 
     def on_pre_dismiss(self):
-        self.game.start_game()
+        self.game.start_game(self.game.cols, self.game.rows, self.game.round_swipes)
 
 
 class Cube(Button):
