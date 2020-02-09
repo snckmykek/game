@@ -67,9 +67,6 @@ class CubesGame(ModalView):
         self.touch_is_down = False
         self.forced_up = False
 
-    def on_pre_open(self):
-        self.start_game()
-
     def end_game(self, *l):
         self.ge.score = self.score
         self.ge.game = self
@@ -78,6 +75,9 @@ class CubesGame(ModalView):
         self.ge.open()
 
     def down(self, instance, touch):
+        if self.touch_blocked:
+            return
+
         self.active_column = instance.column
         self.active_line = instance.line
         self.touch_start = touch.ppos
@@ -91,6 +91,9 @@ class CubesGame(ModalView):
             self.playing_field.add_widget(self.starting_point)
 
     def up(self, instance, touch):
+        if self.touch_blocked:
+            return
+
         if self.starting_point:
             self.playing_field.remove_widget(self.starting_point)
             self.starting_point = None
@@ -189,10 +192,6 @@ class CubesGame(ModalView):
     def get_boosted_cube(self, cubes):
         boosted_cubes = list()
         for obj in cubes:
-            obj_prev_x = None
-            obj_next_x = None
-            obj_prev_y = None
-            obj_next_y = None
             for o in self.objects:
                 if o.line == obj.line:
                     if o.column == obj.column - 1:
@@ -212,7 +211,7 @@ class CubesGame(ModalView):
         self.swipes_label.text = str(self.swipes)
 
     def change_color(self, animation, instance):
-        instance.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
+        instance.background_normal = self.cube_pictures[random.randint(0, 1)] #len(self.cube_pictures) - 1)]
         instance.background_down = instance.background_normal
 
     def movement(self, instance, touch):
@@ -261,7 +260,7 @@ class CubesGame(ModalView):
                 button = Cube(size_hint=(None, None), size=(self.a, self.a),
                               pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
-                button.background_normal = self.cube_pictures[random.randint(0, len(self.cube_pictures) - 1)]
+                button.background_normal = self.cube_pictures[random.randint(0, 1)]#len(self.cube_pictures) - 1)]
                 button.background_down = button.background_normal
                 button.line = i
                 button.column = j
