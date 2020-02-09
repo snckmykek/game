@@ -263,7 +263,7 @@ class CubesGame(ModalView):
         self.cols = cols
         self.rows = rows
         self.swipes = swipes
-        self.a = WINDOW.width / (self.cols if self.cols >= self.rows else self.rows + 1)
+        self.a = WINDOW.width / ((self.cols if self.cols >= self.rows else self.rows) + 1)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         if cubes:
             pass  # stub
