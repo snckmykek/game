@@ -15,6 +15,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
 from kivy.lang.builder import Builder
+from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 from global_variables import WINDOW
 
@@ -217,7 +218,7 @@ class CubesGame(ModalView):
         if not self.playing_field.collide_point(*touch.pos):
             return
 
-        if abs(touch.dx) > abs(touch.dy):
+        if (abs(touch.dx) > abs(touch.dy)) or self.y_movement_blocked:
             if (instance.center_x - instance.width / 2) < touch.pos[0] < (instance.center_x + instance.width / 2) \
                     and instance.line == self.active_line and not self.x_movement_blocked:
                 self.y_movement_blocked = True
@@ -229,7 +230,8 @@ class CubesGame(ModalView):
                         elif new_pos_x < - but.width / 2:
                             new_pos_x += self.cols * but.width
                         but.pos[0] = new_pos_x
-        elif abs(touch.dx) < abs(touch.dy):
+
+        if (abs(touch.dx) < abs(touch.dy)) or self.x_movement_blocked:
             if (instance.center_y - instance.height / 2) < touch.pos[1] < (instance.center_y +
                                                                            instance.height / 2) and instance.column == self.active_column and not self.y_movement_blocked:
                 self.x_movement_blocked = True
@@ -277,7 +279,7 @@ class GameEnding(ModalView):
         super(GameEnding, self).__init__(**kwargs)
 
         self.score = 0
-        self.game = ''
+        self.game = ObjectProperty
 
     def on_pre_open(self):
         self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
