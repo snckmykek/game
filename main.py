@@ -96,7 +96,6 @@ class CubesGame(ModalView):
         if not instance.collide_point(*touch.pos):
             return
 
-        print(instance.column, instance.line)
         self.active_column.clear()
         self.active_line.clear()
         for cube in self.objects:
@@ -266,7 +265,7 @@ class CubesGame(ModalView):
         instance.background_color = self.cube_colors[random.randint(0, len(self.cube_colors) - 1)]
 
     def movement(self, instance, touch):
-        if self.touch_blocked:
+        if self.touch_blocked or not self.touch_is_down:
             return
 
         if not self.playing_field.collide_point(*touch.pos):
