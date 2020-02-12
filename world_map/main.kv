@@ -1,0 +1,18 @@
+
+<Round>:
+    size_hint: None, None
+    border: (0, 0, 0, 0)
+    on_state: root.animate_round()
+
+
+<WorldMap>:
+    RelativeLayout:
+        id: rl
+        Label:
+            id: lines
+            size_hint: None, None
+            size: root.size
+            pos: root.pos
+        StencilView:
+            id: world_map
+
