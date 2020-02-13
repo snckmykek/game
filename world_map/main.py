@@ -6,6 +6,7 @@ from kivy.properties import ObjectProperty
 from kivy.graphics import Rectangle, Color, Line
 from kivy.uix.widget import Widget
 from sqlite_requests import db
+import time
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
@@ -81,6 +82,8 @@ class WorldMap(ModalView):
                                 (self.coords[i][1] + self.coords[i - 1][1]) / 2 - 15 + WINDOW.width/16])
                 bezier += list([z + WINDOW.width/16 for z in self.coords[i - 1]])
                 Line(width=WINDOW.width/60, bezier=bezier)
+
+        time.sleep(.2)
 
         self.world_map.clear_widgets()
         for i, coord in enumerate(self.coords):
