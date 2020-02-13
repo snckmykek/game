@@ -4,7 +4,7 @@
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: None
-            height: WINDOW.height - (rl.height + (WINDOW.width / 6) * 3)
+            height: WINDOW.height - (rl.height + (WINDOW.width / 6) *2)  # * 3)
             canvas:
                 Color:
                     rgba: (.36, .17, .05, 1)
@@ -21,7 +21,7 @@
                         size: self.size
                         pos: self.pos
                 Button:
-                    text: 'back'
+                    text: '<<back'
                     color: (1, .5, 0, 1)
                     background_normal: ''
                     background_color: (.30, .12, .03, 1)
@@ -39,7 +39,14 @@
                     id: swipes_label
                     color: (1, .5, 0, 1)
             Label:
-                text: ''
+                id: text_round
+                text: 'Привет :)'.encode('cp1251').decode('utf-8')
+                color: (.98, .49, 0, 1)
+                multiline: True
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                padding: (WINDOW.width/40, WINDOW.width/40)
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: None
@@ -88,15 +95,15 @@
                             Rectangle:
                                 size: self.size
                                 pos: self.pos
-        Widget:
-            size_hint_y: None
-            height: WINDOW.width / 6
-            canvas:
-                Color:
-                    rgba: (.30, .12, .03, 1)
-                Rectangle:
-                    size: self.size
-                    pos: self.pos
+#        Widget:
+#            size_hint_y: None
+#            height: WINDOW.width / 6
+#            canvas:
+#                Color:
+#                    rgba: (.30, .12, .03, 1)
+#                Rectangle:
+#                    size: self.size
+#                    pos: self.pos
 
 <StartingPoint>:
     size_hint: None, None

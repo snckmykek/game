@@ -5,6 +5,7 @@ from global_variables import WINDOW
 from kivy.properties import ObjectProperty
 from kivy.graphics import Rectangle, Color, Line
 from kivy.uix.widget import Widget
+from sqlite_requests import db
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
@@ -42,7 +43,7 @@ class WorldMap(ModalView):
 
     def on_pre_open(self):
         self.current_location = locations[0]
-        self.open_location()
+        self.open_location(None, 'first')
 
     def open_location(self, instance=None, next_location='next'):
         if next_location == 'first':
@@ -70,10 +71,11 @@ class WorldMap(ModalView):
                 Line(width=WINDOW.width/60, bezier=bezier)
 
         with self.ids.lines.canvas.before:
+            completed_levels = db.get_levels(self.current_location.name)
             for i, coord in enumerate(self.coords):
-                if i == 0 or i > 1:
+                if i == 0 or str(i) not in completed_levels:
                     continue
-                Color(.1, .1, 1, .7)
+                Color(.1, .1, 1, .5)
                 bezier = list([z + WINDOW.width/16 for z in self.coords[i]])
                 bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + 10 + WINDOW.width/16,
                                 (self.coords[i][1] + self.coords[i - 1][1]) / 2 - 15 + WINDOW.width/16])
@@ -95,6 +97,8 @@ class WorldMap(ModalView):
         except IndexError:
             return
 
+        self.cubes_game.current_location = self.current_location
+        self.cubes_game.current_round = current_round
         self.cubes_game.round_swipes = current_round.swipes  # Этот раунд - типо уровень. А выше round - это кнопка уровня:)
         self.cubes_game.start_game(current_round.cols if current_round.cols <= 10 else 5,
                                    current_round.rows if current_round.rows <= 10 else 5,
@@ -108,6 +112,7 @@ class WorldMap(ModalView):
 class SingleWorld:
 
     def __init__(self, **kwargs):
+        self.name = 'Faceless'
         self.coords = tuple((0, 0), )
         self.background = ''
         self.rounds = rounds
@@ -122,6 +127,7 @@ first_location.coords = [(WINDOW.width / 8, WINDOW.height * 1 / 5), (WINDOW.widt
                          (WINDOW.width / 6, WINDOW.height * 4 / 5)]
 first_location.background = 'images/world_map_1.png'
 first_location.round_button = Round
+first_location.name = 'First'
 
 # Second Location
 second_location = SingleWorld()
@@ -131,6 +137,7 @@ second_location.coords = [(WINDOW.width * 2 / 8, WINDOW.height * 2 / 5),
                           (WINDOW.width * 2.5 / 6, WINDOW.height * 3 / 3.5)]
 second_location.background = 'images/world_map_2.png'
 second_location.round_button = Round
+second_location.name = 'Second'
 
 # LOCATIONS
 locations = [first_location, second_location]

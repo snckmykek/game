@@ -1,4 +1,3 @@
-
 from kivy.animation import Animation
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -7,27 +6,29 @@ from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 from global_variables import WINDOW
+from sqlite_requests import db
 
 import math
 import random
-
 
 Builder.load_file(r'cubes_game/main.kv')
 
 
 class CubesGame(ModalView):
 
-    def __init__(self, ** kwargs):
+    def __init__(self, **kwargs):
         super(CubesGame, self).__init__(**kwargs)
 
         self.ge = GameEnding()
 
+        self.current_round = ObjectProperty
+        self.current_location = ObjectProperty
         self.cols = 4  # Колонки
         self.rows = 4  # Столбцы
         self.swipes = 20  # Количество ходов
         self.round_swipes = 20  # Это число не меняется в процессе игры (только при запуске) и при перезапуске используется
         self.colors = 4  # Цветов в раунде
-        self.cube_colors = [(1, 0, 0, 1), (0, 1, 0, 1), (.3, .88, .9, 1), (.8, 0, .87, 1)]
+        self.cube_colors = [(1, 0, 0, 1), (0, 1, 0, 1), (.3, .88, .9, 1), (.8, 0, .87, 1), (.9, .5, 0, 1)]
 
         self.a = WINDOW.width / (self.cols + 1)
         self.score = 0
@@ -109,7 +110,7 @@ class CubesGame(ModalView):
         self.touch_blocked = True
         # Запускается анимация на перемещение по нужным координатам для всех кубов в строке или колонке
         is_rounding_up = None  # Эта наркомания обусловлена тем, что бывает подвисают координаты кнопок
-                                   # и соседние кнопки разъезжаются в разные стороны
+        # и соседние кнопки разъезжаются в разные стороны
         if self.y_movement_blocked:
             for but in self.active_line:
                 if is_rounding_up is None:
@@ -180,7 +181,7 @@ class CubesGame(ModalView):
                 self.playing_field.remove_widget(prize)
                 self.ids.rl.add_widget(prize)
                 self.prizes.remove(prize)
-                animation = Animation(size=(prize.size[0]*1.2, prize.size[1]*1.2), d=.4)
+                animation = Animation(size=(prize.size[0] * 1.2, prize.size[1] * 1.2), d=.4)
                 animation += Animation(size=prize.size, d=.4)
                 animation += Animation(size=(10, 10), d=.8)
                 animation &= Animation(pos=(self.ids.bonus_1.center_x, self.ids.bonus_1.center_y), d=1.3)
@@ -287,31 +288,33 @@ class CubesGame(ModalView):
                 button.column = j
                 self.objects.append(button)
 
-        coordinates_background_objects = [[(0, 0), (1, 0)],
-                                          [(0, 1), (1, 1)]
-                                          ]
-        self.background_objects = list()
-        for i, row in enumerate(coordinates_background_objects):
-            for j, coords in enumerate(row):
-                button = Cube(size_hint=(None, None), size=(self.a, self.a),
-                              pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))))
-                button.line = i
-                button.column = j
-                button.background_normal = ''
-                button.background_color = (.82, .93, .51, 1)
-                self.background_objects.append(button)
+        self.ids.text_round.text = self.current_round.text_round
 
-        self.prizes = list()
-        button = Cube(size_hint=(None, None), size=(self.a*2, self.a*2), pos=(0, 0))
-        button.column = [0, 1]
-        button.line = [0, 1]
-        self.prizes.append(button)
-
+        # coordinates_background_objects = [[(0, 0), (1, 0)],
+        #                                   [(0, 1), (1, 1)]
+        #                                   ]
+        # self.background_objects = list()
+        # for i, row in enumerate(coordinates_background_objects):
+        #     for j, coords in enumerate(row):
+        #         button = Cube(size_hint=(None, None), size=(self.a, self.a),
+        #                       pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))))
+        #         button.line = i
+        #         button.column = j
+        #         button.background_normal = ''
+        #         button.background_color = (.82, .93, .51, 1)
+        #         self.background_objects.append(button)
+        #
+        # self.prizes = list()
+        # button = Cube(size_hint=(None, None), size=(self.a*2, self.a*2), pos=(0, 0))
+        # button.column = [0, 1]
+        # button.line = [0, 1]
+        # self.prizes.append(button)
+        #
         self.playing_field.clear_widgets()
-        for obj in self.prizes:
-            self.playing_field.add_widget(obj)
-        for obj in self.background_objects:
-            self.playing_field.add_widget(obj)
+        # for obj in self.prizes:
+        #     self.playing_field.add_widget(obj)
+        # for obj in self.background_objects:
+        #     self.playing_field.add_widget(obj)
         for obj in self.objects:
             self.playing_field.add_widget(obj)
 
@@ -334,7 +337,8 @@ class GameEnding(ModalView):
         self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
 
     def on_pre_dismiss(self):
-        self.game.start_game(self.game.cols, self.game.rows, self.game.round_swipes)
+        db.insert_completed_level(self.game.current_location.name, self.game.current_round.name)
+        self.game.start_game(self.game.cols, self.game.rows, self.game.round_swipes, self.game.colors)
 
 
 class Cube(Button):
