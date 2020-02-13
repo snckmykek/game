@@ -6,7 +6,6 @@ from kivy.properties import ObjectProperty
 from kivy.graphics import Rectangle, Color, Line
 from kivy.uix.widget import Widget
 from sqlite_requests import db
-import time
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
