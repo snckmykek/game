@@ -64,10 +64,10 @@ class WorldMap(ModalView):
                     continue
                 Color(.1, .1, 1, .3)
                 bezier = list([z + 25 for z in self.coords[i]])
-                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + 10 + 25,
-                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - 15 + 25])
+                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + 10 + WINDOW.width/16,
+                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - 15 + WINDOW.width/16])
                 bezier += list([z + 25 for z in self.coords[i - 1]])
-                Line(width=5, bezier=bezier)
+                Line(width=WINDOW.width/60, bezier=bezier)
 
         with self.ids.lines.canvas.before:
             for i, coord in enumerate(self.coords):
@@ -78,7 +78,7 @@ class WorldMap(ModalView):
                 bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + 10 + 25,
                                 (self.coords[i][1] + self.coords[i - 1][1]) / 2 - 15 + 25])
                 bezier += list([z + 25 for z in self.coords[i - 1]])
-                Line(width=5, bezier=bezier)
+                Line(width=WINDOW.width/60, bezier=bezier)
 
         self.world_map.clear_widgets()
         for i, coord in enumerate(self.coords):
