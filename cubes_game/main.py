@@ -21,6 +21,7 @@ class CubesGame(ModalView):
 
         self.ge = GameEnding()
 
+        self.world_map = ObjectProperty
         self.current_round = ObjectProperty
         self.current_location = ObjectProperty
         self.cols = 4  # Колонки
@@ -51,6 +52,9 @@ class CubesGame(ModalView):
         self.touch_is_down = False
         self.forced_up = False
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
+
+    def on_pre_dismiss(self):
+        self.world_map.open_location(next_location='this')
 
     def end_game(self, *l):
         self.ge.score = self.score

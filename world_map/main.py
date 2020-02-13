@@ -53,6 +53,8 @@ class WorldMap(ModalView):
                 self.current_location = self.locations[self.locations.index(self.current_location) + 1]
             except IndexError:
                 self.current_location = self.locations[0]
+        elif next_location == 'this':
+            pass
 
         self.coords = self.current_location.coords
 
@@ -97,6 +99,7 @@ class WorldMap(ModalView):
         except IndexError:
             return
 
+        self.cubes_game.world_map = self
         self.cubes_game.current_location = self.current_location
         self.cubes_game.current_round = current_round
         self.cubes_game.round_swipes = current_round.swipes  # Этот раунд - типо уровень. А выше round - это кнопка уровня:)
