@@ -83,8 +83,6 @@ class WorldMap(ModalView):
                 bezier += list([z + WINDOW.width/16 for z in self.coords[i - 1]])
                 Line(width=WINDOW.width/60, bezier=bezier)
 
-        time.sleep(.2)
-
         self.world_map.clear_widgets()
         for i, coord in enumerate(self.coords):
             round_button = self.current_location.round_button(text=str(i), color=(0, 0, 0, 1), pos=coord)
