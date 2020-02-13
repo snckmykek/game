@@ -22,4 +22,5 @@ class WindowSettings:
         self.size = (self.width, self.height)
 # end Window
 
+
 WINDOW = WindowSettings()

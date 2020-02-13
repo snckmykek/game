@@ -20,6 +20,7 @@ class Round(Button):
         self.background_normal = 'images/ne_najataya.png'
         self.background_down = 'images/najataya.png'
         self.round = 0
+        self.size = [WINDOW.width/8, WINDOW.width/8]
 
     def animate_round(self):
         pass
@@ -81,7 +82,7 @@ class WorldMap(ModalView):
 
         self.world_map.clear_widgets()
         for i, coord in enumerate(self.coords):
-            round_button = self.current_location.round_button(text=str(i), color=(0, 0, 0, 1), pos=coord, size=(50, 50))
+            round_button = self.current_location.round_button(text=str(i), color=(0, 0, 0, 1), pos=coord)
             round_button.bind(on_release=self.play)
             round_button.round = i
             round_button.background_normal = 'images/ne_najataya.png'
