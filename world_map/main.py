@@ -65,22 +65,22 @@ class WorldMap(ModalView):
                     continue
                 Color(.1, .1, 1, .3)
                 bezier = list([z + WINDOW.width/16 for z in self.coords[i]])
-                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + 10 + WINDOW.width/16,
-                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - 15 + WINDOW.width/16])
+                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + WINDOW.width/16 + WINDOW.width/16,
+                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - WINDOW.width/16 + WINDOW.width/16])
                 bezier += list([z + WINDOW.width/16 for z in self.coords[i - 1]])
-                Line(width=WINDOW.width/60, bezier=bezier)
+                Line(width=WINDOW.width/60, bezier=bezier, bezier_precision=WINDOW.width/50)
 
         with self.ids.lines.canvas.before:
             completed_levels = db.get_levels(self.current_location.name)
             for i, coord in enumerate(self.coords):
                 if i == 0 or str(i) not in completed_levels:
                     continue
-                Color(.1, .1, 1, .5)
+                Color(.1, .1, 1, .4)
                 bezier = list([z + WINDOW.width/16 for z in self.coords[i]])
-                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + 10 + WINDOW.width/16,
-                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - 15 + WINDOW.width/16])
+                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + WINDOW.width/16 + WINDOW.width/16,
+                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - WINDOW.width/16 + WINDOW.width/16])
                 bezier += list([z + WINDOW.width/16 for z in self.coords[i - 1]])
-                Line(width=WINDOW.width/60, bezier=bezier)
+                Line(width=WINDOW.width/60, bezier=bezier, bezier_precision=WINDOW.width/50)
 
         self.world_map.clear_widgets()
         for i, coord in enumerate(self.coords):
