@@ -98,7 +98,7 @@ class Database(object):
         Clock.schedule_once(self.commit, .1)
 
     def clear_is_completed(self):
-        self.cur.execute('UPDATE speech SET is_completed = False')
+        self.cur.execute('UPDATE speech SET is_completed = "False"')
 
     def commit(self, *l):
         self.con.commit()
