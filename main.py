@@ -13,8 +13,9 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.lang.builder import Builder
 
 from world_map.main import WorldMap
-from dialog.main import Dialog
+from dialog.main import dialog
 from speech_parser import speech_parser
+from sqlite_requests import db
 
 
 speech_parser()
@@ -28,16 +29,18 @@ class Menu(BoxLayout):
         super(Menu, self).__init__(**kwargs)
 
         self.world_map = WorldMap()
+        self.dialog = dialog
 
     def play(self):
         self.world_map.open()
 
     def dialog(self):
-        dialog = Dialog()
-        dialog.location = 'Первая'
-        dialog.level = '-1'
-        dialog.open()
+        self.dialog.location = 'Первая'
+        self.dialog.level = '-1'
+        self.dialog.open()
 
+    def delete_table(self, table='speech'):
+        db.delete_table(table)
 
 class CubesApp(App):
 

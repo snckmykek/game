@@ -117,5 +117,9 @@ class Database(object):
         self.cur.execute(request)
         return self.cur.fetchall()[0][0] == 0
 
+    def delete_table(self, table='speech'):
+        self.cur.execute('DROP TABLE IF EXISTS {}'.format(table))
+        self.commit()
+
 
 db = Database()
