@@ -46,7 +46,7 @@ class Database(object):
 
         if dialog.current_speaker_is_player:
             request = 'SELECT npc_number_speech, is_available_by_rating, is_available_by_speech, player_number_speech ' \
-                      'FROM speech WHERE location = "{}" AND level = "{}" AND npc != "" AND is_completed = False'\
+                      'FROM speech WHERE location = "{}" AND level = "{}" AND npc != "" AND is_completed = "False"'\
                         .format(dialog.location, dialog.level)
 
             self.cur.execute(request)
@@ -72,7 +72,7 @@ class Database(object):
             if dialog.current_player_speech[0]:
                 request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
                           'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
-                          'AND is_completed = False'.format(dialog.location, dialog.level,
+                          'AND is_completed = "False"'.format(dialog.location, dialog.level,
                                                             dialog.current_player_speech[0])
             else:
                 request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
@@ -88,7 +88,7 @@ class Database(object):
             dialog.current_npc_speech = npc_speech[0]
 
     def set_speech_is_completed(self, dialog):
-        request = 'UPDATE speech SET is_completed = True WHERE ' \
+        request = 'UPDATE speech SET is_completed = "True" WHERE ' \
                   'location = "{}" AND level = "{}" AND player_number_speech = "{}" ' \
                   'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_player_speech[0],
                                                         dialog.current_npc_speech[0])
