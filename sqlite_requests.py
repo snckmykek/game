@@ -23,9 +23,12 @@ class Database(object):
                          'npc_speech TEXT,'
                          'player_number_speech TEXT,'
                          'player_speech TEXT,'
-                         'is_available_by_rating TEXT,'
                          'is_available_by_speech TEXT,'
-                         'is_completed TEXT)')
+                         'alternatives TEXT,'
+                         'is_available_by_rating TEXT,'
+                         'is_completed TEXT,'
+                         'is_canceled TEXT,'
+                         'is_after_game TEXT)')
 
     def insert_completed_level(self, location, level, is_completed="1"):
         self.cur.execute('INSERT INTO completed_levels VALUES("{0}","{1}","{2}")'.format(location, level, is_completed))
@@ -38,18 +41,19 @@ class Database(object):
         return [x[0] for x in self.cur.fetchall()]
 
     def insert_speech(self, values=None):
-        request = 'INSERT INTO speech VALUES("{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}","{9}")' \
-            .format(*values)
+        request = 'INSERT INTO speech VALUES("{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}","{9}","{10}",' \
+                  '"{11}","{12}")'.format(*values)
         self.cur.execute(request)
 
-    def fill_speech(self, dialog):
+    def fill_speech(self, dialog, after_game="0"):
 
         if dialog.current_speaker_is_player:
-            dialog.all_player_speech = self.get_all_player_speech(dialog)
+            dialog.all_player_speech = self.get_all_player_speech(dialog, after_game)
         else:
             request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
                       'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
-                      'AND is_completed = "0"'.format(dialog.location, dialog.level, dialog.current_player_speech[0])
+                      'AND is_completed = "0" AND is_after_game = "{}" AND is_canceled = "0"'\
+                .format(dialog.location, dialog.level, dialog.current_player_speech[0], after_game)
 
             self.cur.execute(request)
             npc_speech = self.cur.fetchall()
@@ -60,8 +64,8 @@ class Database(object):
 
             if not npc_speech:
                 request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
-                          'location = "{}" AND level = "{}" AND npc != "" AND npc_number_speech = "-1"' \
-                    .format(dialog.location, dialog.level)
+                          'location = "{}" AND level = "{}" AND npc != "" AND npc_number_speech = "-1" ' \
+                          'AND is_after_game = "{}"'.format(dialog.location, dialog.level, after_game)
                 self.cur.execute(request)
                 npc_speech = self.cur.fetchall()
                 if not npc_speech:
@@ -72,10 +76,10 @@ class Database(object):
 
             dialog.current_npc_speech = npc_speech[0]
 
-    def get_all_player_speech(self, dialog):
+    def get_all_player_speech(self, dialog, after_game):
         request = 'SELECT npc_number_speech, is_available_by_rating, is_available_by_speech, player_number_speech ' \
-                  'FROM speech WHERE location = "{}" AND level = "{}" AND npc != "" AND is_completed = "0"' \
-            .format(dialog.location, dialog.level)
+                  'FROM speech WHERE location = "{}" AND level = "{}" AND npc != "" AND is_completed = "0" ' \
+                  'AND is_after_game = "{}" AND is_canceled = "0"'.format(dialog.location, dialog.level, after_game)
 
         self.cur.execute(request)
         available_npc_speech = list(self.cur.fetchall())
@@ -101,8 +105,18 @@ class Database(object):
                   'location = "{}" AND level = "{}" AND player_number_speech = "{}" ' \
                   'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_player_speech[0],
                                                         dialog.current_npc_speech[0])
+        self.cur.execute(request)
+
+        request = 'SELECT alternatives FROM speech WHERE location = "{}" AND level = "{}" ' \
+                  'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_npc_speech[0])
 
         self.cur.execute(request)
+        alternatives = self.cur.fetchall()[0][0].split(' ')
+        for npc_number_speech in alternatives:
+            request = 'UPDATE speech SET is_canceled = "1" WHERE ' \
+                      'location = "{}" AND level = "{}" AND npc_number_speech = "{}"'\
+                .format(dialog.location, dialog.level, npc_number_speech)
+            self.cur.execute(request)
 
         Clock.schedule_once(self.commit, .1)
 

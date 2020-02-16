@@ -34,7 +34,7 @@ class Menu(BoxLayout):
     def play(self):
         self.world_map.open()
 
-    def dialog(self):
+    def open_dialog(self):
         self.dialog.location = 'Первая'
         self.dialog.level = '-1'
         self.dialog.open()

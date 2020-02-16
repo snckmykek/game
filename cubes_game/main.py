@@ -362,6 +362,7 @@ class GameEnding(ModalView):
         self.dismiss()
         self.game.dismiss()
 
+
 class Cube(Button):
 
     def __init__(self, **kwargs):
