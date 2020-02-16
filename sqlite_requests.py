@@ -29,7 +29,7 @@ class Database(object):
 
     def insert_completed_level(self, location, level, is_completed=True):
         self.cur.execute('INSERT INTO completed_levels VALUES("{0}","{1}","{2}")'.format(location, level, is_completed))
-        Clock.schedule_once(self._commit)
+        Clock.schedule_once(self.commit)
 
     def get_levels(self, location, is_completed=True):
         request = 'SELECT level FROM completed_levels WHERE location = "{}" AND is_completed = "{}"'.format(location,
@@ -41,7 +41,6 @@ class Database(object):
         request = 'INSERT INTO speech VALUES("{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}","{9}")'\
             .format(*values)
         self.cur.execute(request)
-        Clock.schedule_once(self._commit)
 
     def fill_speech(self, dialog):
 
@@ -96,13 +95,18 @@ class Database(object):
 
         self.cur.execute(request)
 
-        Clock.schedule_once(self._commit, .1)
+        Clock.schedule_once(self.commit, .1)
 
     def clear_is_completed(self):
         self.cur.execute('UPDATE speech SET is_completed = False')
 
-    def _commit(self, *l):
+    def commit(self, *l):
         self.con.commit()
+
+    def table_is_empty(self, table='speech'):
+        request = 'SELECT COUNT(*) as count FROM speech'
+        self.cur.execute(request)
+        return self.cur.fetchall()[0][0] == 0
 
 
 db = Database()

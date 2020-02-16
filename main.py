@@ -14,6 +14,10 @@ from kivy.lang.builder import Builder
 
 from world_map.main import WorldMap
 from dialog.main import Dialog
+from speech_parser import speech_parser
+
+
+speech_parser()
 
 Builder.load_file(r'mainscreen.kv')
 
