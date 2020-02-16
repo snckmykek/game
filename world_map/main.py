@@ -6,6 +6,7 @@ from kivy.properties import ObjectProperty
 from kivy.graphics import Rectangle, Color, Line
 from kivy.uix.widget import Widget
 from sqlite_requests import db
+from dialog.main import dialog
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
@@ -32,6 +33,9 @@ class WorldMap(ModalView):
     def __init__(self, **kwargs):
         super(WorldMap, self).__init__(**kwargs)
 
+        self.dialog = dialog
+        self.is_first_open_location = True
+
         self.cubes_game = CubesGame()
         self.world_map = self.ids.world_map
         self.coords = tuple()
@@ -41,9 +45,17 @@ class WorldMap(ModalView):
             Button(text='next', size_hint=(None, None), width=WINDOW.width / 5, height=WINDOW.height / 12,
                    on_press=self.open_location, pos_hint={'x': .8}))
 
+    def open_dialog(self):
+        self.dialog.location = self.current_location.name
+        self.dialog.level = '-1'
+        self.dialog.open()
+
     def on_pre_open(self):
-        self.current_location = locations[0]
+        self.is_first_open_location = True
         self.open_location(None, 'first')
+
+    def on_open(self):
+        self.open_dialog()
 
     def open_location(self, instance=None, next_location='next'):
         if next_location == 'first':
@@ -93,6 +105,11 @@ class WorldMap(ModalView):
             round_button.background_down = 'images/najataya.png'
             self.world_map.add_widget(round_button)
 
+        if (not self.is_first_open_location) and (next_location != 'this'):
+            self.open_dialog()
+        else:
+            self.is_first_open_location = False
+
     def play(self, *l):
         try:
             current_round = self.current_location.rounds[l[0].round]
@@ -130,7 +147,7 @@ first_location.coords = [(WINDOW.width / 8, WINDOW.height * 1 / 5), (WINDOW.widt
                          (WINDOW.width / 6, WINDOW.height * 4 / 5)]
 first_location.background = 'images/world_map_1.png'
 first_location.round_button = Round
-first_location.name = 'First'
+first_location.name = 'Первая'
 
 # Second Location
 second_location = SingleWorld()

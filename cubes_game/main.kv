@@ -117,11 +117,18 @@
 <GameEnding>:
     size_hint: .8, .8
     BoxLayout:
+        orientation: 'vertical'
         Widget:
         Label:
             id: lbl
             text: 'GG! Your score is: 0'
         Widget:
+        Button:
+            text: 'Play again'
+            on_press: root.play_again()
+        Button:
+            text: 'Exit'
+            on_press: root.exit_level()
 
 <Cube>:
     border: (0, 0, 0, 0)

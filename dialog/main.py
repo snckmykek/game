@@ -49,6 +49,7 @@ class Dialog(ModalView):
         self.npc_speech_box.ids.but.bind(on_press=self.npc_said)
 
     def on_pre_open(self):
+        self.current_player_speech = tuple(['', ''])
         self.current_speaker_is_player = False
         self.refresh_speech_box()
 
@@ -58,9 +59,6 @@ class Dialog(ModalView):
         self.content_box.clear_widgets()
         if self.current_speaker_is_player:
             self.player_speech_box.clear_widgets()
-            if not self.all_player_speech:
-                psb = PlayerSpeechButton(text='У меня больше нет времени на разговоры.')
-                self.player_speech_box.add_widget(psb)
             for sp in self.all_player_speech:
                 psb = PlayerSpeechButton(text=sp[1], on_press=self.player_said)
                 psb.speech = sp
@@ -78,7 +76,13 @@ class Dialog(ModalView):
 
     def npc_said(self, instance):
         db.set_speech_is_completed(self)
+        if self.current_npc_speech[0] == '-1':
+            self.dismiss()
+            return
         self.refresh_speech_box()
 
     def clear_db(self):
         db.clear_is_completed()
+
+
+dialog = Dialog()

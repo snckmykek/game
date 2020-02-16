@@ -8,6 +8,8 @@ from kivy.clock import Clock
 from global_variables import WINDOW
 from sqlite_requests import db
 
+from dialog.main import dialog
+
 import math
 import random
 
@@ -20,6 +22,7 @@ class CubesGame(ModalView):
         super(CubesGame, self).__init__(**kwargs)
 
         self.ge = GameEnding()
+        self.dialog = dialog
 
         self.world_map = ObjectProperty
         self.current_round = ObjectProperty
@@ -52,6 +55,11 @@ class CubesGame(ModalView):
         self.touch_is_down = False
         self.forced_up = False
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
+
+    def on_open(self):
+        self.dialog.location = self.current_location.name
+        self.dialog.level = self.current_round.name
+        self.dialog.open()
 
     def on_pre_dismiss(self):
         self.world_map.open_location(next_location='this')
@@ -342,8 +350,17 @@ class GameEnding(ModalView):
 
     def on_pre_dismiss(self):
         db.insert_completed_level(self.game.current_location.name, self.game.current_round.name)
-        self.game.start_game(self.game.cols, self.game.rows, self.game.round_swipes, self.game.colors)
 
+    def play_again(self):
+        self.game.start_game(cols=self.game.cols,
+                             rows=self.game.rows,
+                             swipes=self.game.round_swipes,
+                             colors=self.game.colors)
+        self.dismiss()
+
+    def exit_level(self):
+        self.dismiss()
+        self.game.dismiss()
 
 class Cube(Button):
 
