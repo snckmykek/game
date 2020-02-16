@@ -28,45 +28,19 @@
                 size: self.size
                 pos: self.pos
         Label:
-            text: 'for test'
+            text: 'Info?'
             color: (1, .5, 0, 1)
-        BoxLayout:
-            Label:
-                text: 'Cols: '
-                color: (1, .5, 0, 1)
-            TextInput:
-                id: playing_field_cols
-                text: '5'
-                background_color: (.30, .12, .03, 1)
-                color: (1, .5, 0, 1)
-        BoxLayout:
-            Label:
-                text: 'Rows: '
-                color: (1, .5, 0, 1)
-            TextInput:
-                id: playing_field_rows
-                text: '5'
-                background_color: (.30, .12, .03, 1)
-                color: (1, .5, 0, 1)
-        BoxLayout:
-            Label:
-                text: 'Swipe: '
-                color: (1, .5, 0, 1)
-            TextInput:
-                id: swipes
-                text: '20'
-                background_color: (.30, .12, .03, 1)
-                color: (1, .5, 0, 1)
     Button:
         text: 'stub'
         color: (1, .5, 0, 1)
         background_normal:''
         background_color: (.30, .12, .03, 1)
     Button:
-        text: 'stub'
+        text: 'Test dialog'
         color: (1, .5, 0, 1)
         background_normal:''
         background_color: (.30, .12, .03, 1)
+        on_press: root.dialog()
     Button:
         text: 'Play'
         color: (1, .5, 0, 1)

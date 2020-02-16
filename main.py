@@ -13,6 +13,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.lang.builder import Builder
 
 from world_map.main import WorldMap
+from dialog.main import Dialog
 
 Builder.load_file(r'mainscreen.kv')
 
@@ -26,6 +27,12 @@ class Menu(BoxLayout):
 
     def play(self):
         self.world_map.open()
+
+    def dialog(self):
+        dialog = Dialog()
+        dialog.location = 'Первая'
+        dialog.level = '-1'
+        dialog.open()
 
 
 class CubesApp(App):

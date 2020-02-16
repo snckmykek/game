@@ -1,0 +1,72 @@
+#:import WINDOW global_variables.WINDOW
+#:import COMMONBUTTON global_variables.COMMONBUTTON
+
+
+<NPCSpeechBox>:
+    Label:
+        id: speech
+        text_size: self.size
+        color: (.98, .49, 0, 1)
+        multiline: True
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        padding: (WINDOW.width/40, WINDOW.width/40)
+    Button:
+        id: but
+        size_hint: None, None
+        size: COMMONBUTTON.size
+        center: (root.width / 2, root.height / 8)
+        text: 'Ok'
+
+
+<PlayerSpeechBox>:
+    orientation: 'vertical'
+    spacing: WINDOW.width / 20
+    padding: [WINDOW.width / 40, WINDOW.width / 20]
+    canvas:
+        Color:
+            rgba: (.36, .17, .05, 1)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<PlayerSpeechButton>:
+    color: (1, .5, 0, 1)
+    background_normal:''
+    background_color: (.30, .12, .03, 1)
+    padding: [WINDOW.width / 40, WINDOW.width / 20]
+    size_hint_y: None
+    text_size: self.width, None
+    height: self.texture_size[1] + WINDOW.width / 20
+
+
+<Dialog>:
+    size_hint: .8, .8
+    background_normal: ''
+    BoxLayout:
+        orientation: 'vertical'
+        canvas:
+            Color:
+                rgba: (.36, .17, .05, 1)
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            id: content_box
+            size_hint_y: .9
+            Label:
+                text: '123'
+                color: (1, .5, 0, 1)
+                multiline: True
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+                padding: (WINDOW.width/40, WINDOW.width/40)
+        Button:
+            size_hint_y: .1
+            text: 'Ok (Clear for test)'
+            color: (1, .5, 0, 1)
+            background_normal: ''
+            background_color: (.30, .12, .03, 1)
+            on_press: root.clear_db()

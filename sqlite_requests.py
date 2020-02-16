@@ -1,4 +1,5 @@
 import sqlite3
+from kivy.clock import Clock
 
 
 class Database(object):
@@ -14,16 +15,94 @@ class Database(object):
 
     def sqlite_create_db(self):
         self.cur.execute('CREATE TABLE IF NOT EXISTS completed_levels(location TEXT,level TEXT,is_completed BOOLEAN)')
+        self.cur.execute('CREATE TABLE IF NOT EXISTS speech('
+                         'location TEXT,'
+                         'level TEXT,'
+                         'npc TEXT,'
+                         'npc_number_speech TEXT,'
+                         'npc_speech TEXT,'
+                         'player_number_speech TEXT,'
+                         'player_speech TEXT,'
+                         'is_available_by_rating TEXT,'
+                         'is_available_by_speech TEXT,'
+                         'is_completed BOOLEAN)')
 
     def insert_completed_level(self, location, level, is_completed=True):
         self.cur.execute('INSERT INTO completed_levels VALUES("{0}","{1}","{2}")'.format(location, level, is_completed))
-        self.con.commit()
+        Clock.schedule_once(self._commit)
 
     def get_levels(self, location, is_completed=True):
         request = 'SELECT level FROM completed_levels WHERE location = "{}" AND is_completed = "{}"'.format(location,
                                                                                                             is_completed)
         self.cur.execute(request)
         return [x[0] for x in self.cur.fetchall()]
+
+    def insert_speech(self, values=None):
+        request = 'INSERT INTO speech VALUES("{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}","{9}")'\
+            .format(*values)
+        self.cur.execute(request)
+        Clock.schedule_once(self._commit)
+
+    def fill_speech(self, dialog):
+
+        if dialog.current_speaker_is_player:
+            request = 'SELECT npc_number_speech, is_available_by_rating, is_available_by_speech, player_number_speech ' \
+                      'FROM speech WHERE location = "{}" AND level = "{}" AND npc != "" AND is_completed = False'\
+                        .format(dialog.location, dialog.level)
+
+            self.cur.execute(request)
+            available_npc_speech = list(self.cur.fetchall())
+            available_npc_speech_copy = available_npc_speech.copy()
+            npc_speech_numbers = [s[0] for s in available_npc_speech]
+            for sp in available_npc_speech_copy:
+                for num in npc_speech_numbers:
+                    if num in sp[2]:
+                        available_npc_speech.remove(sp)
+                        break
+
+            available_player_speech_numbers = [s[3] for s in available_npc_speech]
+
+            request = 'SELECT player_number_speech, player_speech FROM speech WHERE ' \
+                      'location = "{}" AND level = "{}" AND npc = "" AND player_number_speech IN ({})' \
+                      .format(dialog.location, dialog.level, str(available_player_speech_numbers)[1:-1])
+
+            self.cur.execute(request)
+            dialog.all_player_speech = list(self.cur.fetchall())
+
+        else:
+            if dialog.current_player_speech[0]:
+                request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
+                          'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
+                          'AND is_completed = False'.format(dialog.location, dialog.level,
+                                                            dialog.current_player_speech[0])
+            else:
+                request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
+                          'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
+                          ''.format(dialog.location, dialog.level,
+                                                            dialog.current_player_speech[0])
+
+            self.cur.execute(request)
+            npc_speech = self.cur.fetchall()
+            if len(npc_speech) > 1:
+                pass
+
+            dialog.current_npc_speech = npc_speech[0]
+
+    def set_speech_is_completed(self, dialog):
+        request = 'UPDATE speech SET is_completed = True WHERE ' \
+                  'location = "{}" AND level = "{}" AND player_number_speech = "{}" ' \
+                  'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_player_speech[0],
+                                                        dialog.current_npc_speech[0])
+
+        self.cur.execute(request)
+
+        Clock.schedule_once(self._commit, .1)
+
+    def clear_is_completed(self):
+        self.cur.execute('UPDATE speech SET is_completed = False')
+
+    def _commit(self, *l):
+        self.con.commit()
 
 
 db = Database()
