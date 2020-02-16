@@ -5,7 +5,7 @@ def speech_parser():
     if not db.table_is_empty():
         return
 
-    with open('speech.txt', 'r', encoding='utf-8') as f:
+    with open('/speech.txt', 'r', encoding='utf-8') as f:
         values = f.readlines()
 
     for s in values:
