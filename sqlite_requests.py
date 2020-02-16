@@ -49,8 +49,6 @@ class Database(object):
 
         after_game = "1" if after_game else "0"
 
-        # if dialog.current_speaker_is_player:
-        # else:
         request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
                   'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
                   'AND is_completed = "0" AND is_after_game = "{}" AND is_canceled = "0"'\
@@ -76,6 +74,8 @@ class Database(object):
             pass
 
         dialog.current_npc_speech = npc_speech[0]
+
+        self.set_speech_is_completed(dialog)
 
         dialog.all_player_speech = self.get_all_player_speech(dialog, after_game)
 

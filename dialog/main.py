@@ -57,22 +57,13 @@ class Dialog(ModalView):
         db.fill_speech(self, self.is_after_game)
 
         self.npc_speech.text = self.current_npc_speech[1]
-        # self.content_box.clear_widgets()
-        # if self.current_speaker_is_player:
         self.player_speech_box.clear_widgets()
         for sp in self.all_player_speech:
             psb = PlayerSpeechButton(text=sp[1], on_press=self.player_said)
             psb.speech = sp
             self.player_speech_box.add_widget(psb)
-        # self.content_box.add_widget(self.player_speech_box)
-        # else:
-
-            # self.content_box.add_widget(self.npc_speech_box)
-
-        # self.current_speaker_is_player = not self.current_speaker_is_player
 
     def player_said(self, instance):
-        db.set_speech_is_completed(self)
         self.current_player_speech = instance.speech
         self.refresh_speech_box()
 
