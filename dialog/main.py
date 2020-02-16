@@ -42,11 +42,11 @@ class Dialog(ModalView):
         self.location = ''
         self.level = ''
 
+        self.is_after_game = False
         self.current_speaker_is_player = False
         self.content_box = self.ids.content_box
-        self.player_speech_box = PlayerSpeechBox()
-        self.npc_speech_box = NPCSpeechBox()
-        self.npc_speech_box.ids.but.bind(on_press=self.npc_said)
+        self.player_speech_box = self.ids.player_speech_box
+        self.npc_speech = self.ids.npc_speech
 
     def on_pre_open(self):
         self.current_player_speech = tuple(['', ''])
@@ -54,31 +54,26 @@ class Dialog(ModalView):
         self.refresh_speech_box()
 
     def refresh_speech_box(self):
-        db.fill_speech(self)
+        db.fill_speech(self, self.is_after_game)
 
-        self.content_box.clear_widgets()
-        if self.current_speaker_is_player:
-            self.player_speech_box.clear_widgets()
-            for sp in self.all_player_speech:
-                psb = PlayerSpeechButton(text=sp[1], on_press=self.player_said)
-                psb.speech = sp
-                self.player_speech_box.add_widget(psb)
-            self.content_box.add_widget(self.player_speech_box)
-        else:
-            self.npc_speech_box.ids.speech.text = self.current_npc_speech[1]
-            self.content_box.add_widget(self.npc_speech_box)
+        self.npc_speech.text = self.current_npc_speech[1]
+        # self.content_box.clear_widgets()
+        # if self.current_speaker_is_player:
+        self.player_speech_box.clear_widgets()
+        for sp in self.all_player_speech:
+            psb = PlayerSpeechButton(text=sp[1], on_press=self.player_said)
+            psb.speech = sp
+            self.player_speech_box.add_widget(psb)
+        # self.content_box.add_widget(self.player_speech_box)
+        # else:
 
-        self.current_speaker_is_player = not self.current_speaker_is_player
+            # self.content_box.add_widget(self.npc_speech_box)
+
+        # self.current_speaker_is_player = not self.current_speaker_is_player
 
     def player_said(self, instance):
-        self.current_player_speech = instance.speech
-        self.refresh_speech_box()
-
-    def npc_said(self, instance):
         db.set_speech_is_completed(self)
-        if self.current_npc_speech[0] == '-1':
-            self.dismiss()
-            return
+        self.current_player_speech = instance.speech
         self.refresh_speech_box()
 
     def clear_db(self):

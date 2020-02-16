@@ -2,43 +2,14 @@
 #:import COMMONBUTTON global_variables.COMMONBUTTON
 
 
-<NPCSpeechBox>:
-    Label:
-        id: speech
-        text_size: self.size
-        color: (.98, .49, 0, 1)
-        multiline: True
-        text_size: self.size
-        halign: 'left'
-        valign: 'middle'
-        padding: (WINDOW.width/40, WINDOW.width/40)
-    Button:
-        id: but
-        size_hint: None, None
-        size: COMMONBUTTON.size
-        center: (root.width / 2, root.height / 8)
-        text: 'Ok'
-
-
-<PlayerSpeechBox>:
-    orientation: 'vertical'
-    spacing: WINDOW.width / 20
-    padding: [WINDOW.width / 40, WINDOW.width / 20]
-    canvas:
-        Color:
-            rgba: (.36, .17, .05, 1)
-        Rectangle:
-            size: self.size
-            pos: self.pos
-
 <PlayerSpeechButton>:
     color: (1, .5, 0, 1)
     background_normal:''
     background_color: (.30, .12, .03, 1)
-    padding: [WINDOW.width / 40, WINDOW.width / 20]
+    padding: [WINDOW.width / 40, WINDOW.width / 40]
     size_hint_y: None
     text_size: self.width, None
-    height: self.texture_size[1] + WINDOW.width / 20
+    height: self.texture_size[1] + WINDOW.width / 60
 
 
 <Dialog>:
@@ -48,21 +19,38 @@
         orientation: 'vertical'
         canvas:
             Color:
-                rgba: (.36, .17, .05, 1)
+                rgba: (.28, .17, .05, 1)
             Rectangle:
                 size: self.size
                 pos: self.pos
         BoxLayout:
             id: content_box
+            orientation: 'vertical'
             size_hint_y: .9
             Label:
-                text: '123'
-                color: (1, .5, 0, 1)
+                id: npc_speech
+                text_size: self.size
+                color: (.98, .49, 0, 1)
                 multiline: True
                 text_size: self.size
                 halign: 'left'
                 valign: 'middle'
                 padding: (WINDOW.width/40, WINDOW.width/40)
+            ScrollView:
+                GridLayout:
+                    id: player_speech_box
+                    size_hint_y: None
+                    height: self.minimum_height
+                    cols: 1
+                    orientation: 'vertical'
+                    spacing: WINDOW.width / 40
+                    padding: [WINDOW.width / 40, WINDOW.width / 40]
+                    canvas:
+                        Color:
+                            rgba: (.36, .17, .05, 1)
+                        Rectangle:
+                            size: self.size
+                            pos: self.pos
         Button:
             size_hint_y: .1
             text: 'Ok (Clear for test)'

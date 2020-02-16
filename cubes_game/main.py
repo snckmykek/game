@@ -57,6 +57,10 @@ class CubesGame(ModalView):
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
 
     def on_open(self):
+        self.open_dialog()
+
+    def open_dialog(self, is_after_game=False):
+        self.dialog.is_after_game = is_after_game
         self.dialog.location = self.current_location.name
         self.dialog.level = self.current_round.name
         self.dialog.open()
@@ -361,6 +365,9 @@ class GameEnding(ModalView):
     def exit_level(self):
         self.dismiss()
         self.game.dismiss()
+
+    def on_dismiss(self):
+        self.game.open_dialog(is_after_game=True)
 
 
 class Cube(Button):

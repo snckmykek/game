@@ -45,36 +45,39 @@ class Database(object):
                   '"{11}","{12}")'.format(*values)
         self.cur.execute(request)
 
-    def fill_speech(self, dialog, after_game="0"):
+    def fill_speech(self, dialog, after_game=False):
 
-        if dialog.current_speaker_is_player:
-            dialog.all_player_speech = self.get_all_player_speech(dialog, after_game)
-        else:
+        after_game = "1" if after_game else "0"
+
+        # if dialog.current_speaker_is_player:
+        # else:
+        request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
+                  'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
+                  'AND is_completed = "0" AND is_after_game = "{}" AND is_canceled = "0"'\
+            .format(dialog.location, dialog.level, dialog.current_player_speech[0], after_game)
+
+        self.cur.execute(request)
+        npc_speech = self.cur.fetchall()
+
+        if (dialog.current_player_speech[0] == '') and (not npc_speech):
+            if self.get_all_player_speech(dialog, after_game):
+                npc_speech.append(tuple(['-2', 'Что-нибудь еще?']))
+
+        if not npc_speech:
             request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
-                      'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
-                      'AND is_completed = "0" AND is_after_game = "{}" AND is_canceled = "0"'\
-                .format(dialog.location, dialog.level, dialog.current_player_speech[0], after_game)
-
+                      'location = "{}" AND level = "{}" AND npc != "" AND npc_number_speech = "-1" ' \
+                      'AND is_after_game = "{}"'.format(dialog.location, dialog.level, after_game)
             self.cur.execute(request)
             npc_speech = self.cur.fetchall()
-
-            if (dialog.current_player_speech[0] == '') and (not npc_speech):
-                if self.get_all_player_speech(dialog):
-                    npc_speech.append(tuple(['-2', 'Что-нибудь еще?']))
-
             if not npc_speech:
-                request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
-                          'location = "{}" AND level = "{}" AND npc != "" AND npc_number_speech = "-1" ' \
-                          'AND is_after_game = "{}"'.format(dialog.location, dialog.level, after_game)
-                self.cur.execute(request)
-                npc_speech = self.cur.fetchall()
-                if not npc_speech:
-                    npc_speech.append(tuple(['-1', 'Я занят.']))
+                npc_speech.append(tuple(['-1', 'Я занят.']))
 
-            if len(npc_speech) > 1:
-                pass
+        if len(npc_speech) > 1:
+            pass
 
-            dialog.current_npc_speech = npc_speech[0]
+        dialog.current_npc_speech = npc_speech[0]
+
+        dialog.all_player_speech = self.get_all_player_speech(dialog, after_game)
 
     def get_all_player_speech(self, dialog, after_game):
         request = 'SELECT npc_number_speech, is_available_by_rating, is_available_by_speech, player_number_speech ' \
@@ -111,14 +114,16 @@ class Database(object):
                   'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_npc_speech[0])
 
         self.cur.execute(request)
-        alternatives = self.cur.fetchall()[0][0].split(' ')
+        alternatives = self.cur.fetchall()
+        if alternatives:
+            alternatives = alternatives[0][0].split(' ')
         for npc_number_speech in alternatives:
             request = 'UPDATE speech SET is_canceled = "1" WHERE ' \
                       'location = "{}" AND level = "{}" AND npc_number_speech = "{}"'\
                 .format(dialog.location, dialog.level, npc_number_speech)
             self.cur.execute(request)
 
-        Clock.schedule_once(self.commit, .1)
+        self.commit()
 
     def clear_is_completed(self):
         self.cur.execute('UPDATE speech SET is_completed = "0" WHERE npc_number_speech != "-1"')
