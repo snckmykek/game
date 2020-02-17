@@ -68,6 +68,9 @@ class CubesGame(ModalView):
     def on_pre_dismiss(self):
         self.world_map.open_location(next_location='this')
 
+    def on_dismiss(self):
+        self.open_dialog(is_after_game=True)
+
     def end_game(self, *l):
         self.ge.score = self.score
         self.ge.game = self
@@ -365,9 +368,6 @@ class GameEnding(ModalView):
     def exit_level(self):
         self.dismiss()
         self.game.dismiss()
-
-    def on_dismiss(self):
-        self.game.open_dialog(is_after_game=True)
 
 
 class Cube(Button):

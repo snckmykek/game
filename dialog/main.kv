@@ -38,7 +38,7 @@
                             size: self.size
                             pos: self.pos
                 ScrollView:
-                    size_hint_y: .7            
+                    size_hint_y: .7
                     Label:
                         id: npc_speech
                         size_hint_y: None
@@ -49,7 +49,6 @@
                         padding: (WINDOW.width/40, WINDOW.width/40)
                         halign: 'left'
                         valign: 'middle'
-                        on_text: print(self.texture_size[1])
             ScrollView:
                 canvas.before:
                     Color:
