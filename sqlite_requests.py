@@ -68,7 +68,10 @@ class Database(object):
             self.cur.execute(request)
             npc_speech = self.cur.fetchall()
             if not npc_speech:
-                npc_speech.append(tuple(['-1', 'Я занят.']))
+                if not after_game:
+                    npc_speech.append(tuple(['-1', 'Я занят.']))
+                else:
+                    npc_speech.append(tuple(['-1', 'Еще увидимся!']))
 
         if len(npc_speech) > 1:
             pass
@@ -114,9 +117,12 @@ class Database(object):
                   'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_npc_speech[0])
 
         self.cur.execute(request)
-        alternatives = self.cur.fetchall()
+        try:
+            alternatives = self.cur.fetchall()[0][0]
+        except IndexError:
+            alternatives = list()
         if alternatives:
-            alternatives = alternatives[0][0].split(' ')
+            alternatives = alternatives.split(' ')
         for npc_number_speech in alternatives:
             request = 'UPDATE speech SET is_canceled = "1" WHERE ' \
                       'location = "{}" AND level = "{}" AND npc_number_speech = "{}"'\

@@ -27,16 +27,36 @@
             id: content_box
             orientation: 'vertical'
             size_hint_y: .9
-            Label:
-                id: npc_speech
-                text_size: self.size
-                color: (.98, .49, 0, 1)
-                multiline: True
-                text_size: self.size
-                halign: 'left'
-                valign: 'middle'
-                padding: (WINDOW.width/40, WINDOW.width/40)
+            BoxLayout:
+                orientation: 'vertical'
+                BoxLayout:
+                    size_hint_y: .3
+                    canvas.before:
+                        Color:
+                            rgba: (.36, .17, .05, 1)
+                        Rectangle:
+                            size: self.size
+                            pos: self.pos
+                ScrollView:
+                    size_hint_y: .7            
+                    Label:
+                        id: npc_speech
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                        color: (.98, .49, 0, 1)
+                        multiline: True
+                        padding: (WINDOW.width/40, WINDOW.width/40)
+                        halign: 'left'
+                        valign: 'middle'
+                        on_text: print(self.texture_size[1])
             ScrollView:
+                canvas.before:
+                    Color:
+                        rgba: (.36, .17, .05, 1)
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
                 GridLayout:
                     id: player_speech_box
                     size_hint_y: None
@@ -45,16 +65,17 @@
                     orientation: 'vertical'
                     spacing: WINDOW.width / 40
                     padding: [WINDOW.width / 40, WINDOW.width / 40]
-                    canvas:
-                        Color:
-                            rgba: (.36, .17, .05, 1)
-                        Rectangle:
-                            size: self.size
-                            pos: self.pos
-        Button:
+        BoxLayout:
             size_hint_y: .1
-            text: 'Ok (Clear for test)'
-            color: (1, .5, 0, 1)
-            background_normal: ''
-            background_color: (.30, .12, .03, 1)
-            on_press: root.clear_db()
+            Button:
+                text: 'Clear (test)'
+                color: (1, .5, 0, 1)
+                background_normal: ''
+                background_color: (.30, .12, .03, 1)
+                on_press: root.clear_db()
+            Button:
+                text: 'Close'
+                color: (1, .5, 0, 1)
+                background_normal: ''
+                background_color: (.30, .12, .03, 1)
+                on_press: root.dismiss()
