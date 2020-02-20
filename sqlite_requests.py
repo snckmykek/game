@@ -58,7 +58,7 @@ class Database(object):
                           ['fairy', 'images/characters/fairy_available.png',
                            'images/characters/fairy_not_available.png', 1, 1, 0],
                           ['spongebob', 'images/characters/spongebob_available.png',
-                           'images/characters/spongebob_not_available.png', 1, 1, 0]
+                           'images/characters/spongebob_not_available.png', 1, 0, 0]
                           )
             for ch in characters:
                 request = 'INSERT INTO characters VALUES("{}","{}","{}","{}","{}","{}")'.format(*ch)
@@ -85,7 +85,7 @@ class Database(object):
         return list(self.cur.fetchall())
 
     def get_characters(self):
-        request = 'SELECT * FROM characters'.format()
+        request = 'SELECT * FROM characters'
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
