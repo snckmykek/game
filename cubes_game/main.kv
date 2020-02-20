@@ -57,7 +57,7 @@
             orientation: 'vertical'
             size_hint_y: None
             height: rl.height + (WINDOW.width / 6) * 2
-            BoxLayout: # status board
+            AnchorLayout: # status board
                 size_hint_y: None
                 height: WINDOW.width / 6
                 canvas:
@@ -67,9 +67,11 @@
                         size: self.size
                         pos: self.pos
                 BoxLayout:
+                    size_hint_x: None
+                    width: self.minimum_width
                     id: skills
-                    spacing: WINDOW.width / 20
-                    padding: WINDOW.width / 20
+                    spacing: WINDOW.width / 40
+                    padding: WINDOW.width / 40
             AnchorLayout:
                 size_hint_y: None
                 height: rl.height + WINDOW.width / 6
