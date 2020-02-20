@@ -152,6 +152,7 @@ class CubesGame(ModalView):
         Clock.schedule_once(self.boom, .2)
 
     def boom(self, instance=None, *l):
+
         suicidal_cubes = list()
 
         for obj in self.objects:
@@ -327,14 +328,11 @@ class CubesGame(ModalView):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
             animation = Animation(size=(10, 10), d=0.15) + Animation(size=(self.a, self.a), d=0.1)
-            animation.bind(on_complete=self.after_skill_bomb)
+            animation.bind(on_complete=self.change_color)
             animation.start(cube)
+        Clock.schedule_once(self.boom, .6)
 
         return True
-
-    def after_skill_bomb(self, animation, instance):
-        self.change_color(animation, instance)
-        Clock.schedule_once(self.boom, .2)
 
     def start_game(self, cols=5, rows=5, swipes=20, cubes=None, colors=4):
         self.cols = cols
