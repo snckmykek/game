@@ -42,6 +42,7 @@ class CubesGame(ModalView):
         self.playing_field = self.ids.playing_field
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         self.cube_pattern = 'images/pattern.png'
+        self.ids.character.skills = self.ids.skills
 
         self.objects = list()
         self.background_objects = list()
@@ -385,3 +386,50 @@ class StartingPoint(Label):
         super(StartingPoint, self).__init__(**kwargs)
 
         self.size = (WINDOW.width / 20, WINDOW.width / 20)
+
+
+class Character(Button):
+
+    def __init__(self, **kwargs):
+        super(Character, self).__init__(**kwargs)
+
+        self.character_changer = CharacterChanger()
+        self.skills = ObjectProperty
+        self.name = ''
+
+    def open_character_changer(self):
+        self.character_changer.current_character = self
+        self.character_changer.open()
+
+
+class CharacterChanger(ModalView):
+
+    def __init__(self, **kwargs):
+        super(CharacterChanger, self).__init__(**kwargs)
+
+        self.current_character = ObjectProperty
+
+        for ch in db.get_characters():
+            but = Button(background_normal=ch[1] if ch[4] == '1' else ch[2])
+            but.bind(on_press=self.change_character)
+            but.available = True if ch[4] == '1' else False
+            but.name = ch[0]
+            self.ids.character_selection.add_widget(but)
+
+    def change_character(self, instance):
+        if not instance.available:
+            return
+        self.current_character.name = instance.name
+        self.current_character.skills.clear_widgets()
+        for skill in db.get_skills(self.current_character.name):
+            self.current_character.skills.add_widget(Skill(background_normal=skill[2]))
+        self.current_character.background_normal = instance.background_normal
+        self.dismiss()
+
+
+class Skill(Button):
+
+    def __init__(self, **kwargs):
+        super(Skill, self).__init__(**kwargs)
+
+        self.name = ''

@@ -38,15 +38,21 @@
                 Label:
                     id: swipes_label
                     color: (1, .5, 0, 1)
-            Label:
-                id: text_round
-                text: ''
-                color: (.98, .49, 0, 1)
-                multiline: True
-                text_size: self.size
-                halign: 'left'
-                valign: 'middle'
-                padding: (WINDOW.width/40, WINDOW.width/40)
+            BoxLayout:
+                Label:
+                    id: text_round
+                    size_hint_x: .7
+                    text: ''
+                    color: (.98, .49, 0, 1)
+                    multiline: True
+                    text_size: self.size
+                    halign: 'left'
+                    valign: 'middle'
+                    padding: (WINDOW.width/40, WINDOW.width/40)
+                BoxLayout:
+                    size_hint_x: .3
+                    Character:
+                        id: character
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: None
@@ -60,19 +66,10 @@
                     Rectangle:
                         size: self.size
                         pos: self.pos
-                Label:
-                    id: bonus_1
-                    text: 'bonus_1'
-                    color: (1, .5, 0, 1)
-                Label:
-                    text: 'bonus_2'
-                    color: (1, .5, 0, 1)
-                Label:
-                    text: 'bonus_3'
-                    color: (1, .5, 0, 1)
-                Label:
-                    text: 'bonus_4'
-                    color: (1, .5, 0, 1)
+                BoxLayout:
+                    id: skills
+                    spacing: WINDOW.width / 20
+                    padding: WINDOW.width / 20
             AnchorLayout:
                 size_hint_y: None
                 height: rl.height + WINDOW.width / 6
@@ -95,15 +92,33 @@
                             Rectangle:
                                 size: self.size
                                 pos: self.pos
-#        Widget:
-#            size_hint_y: None
-#            height: WINDOW.width / 6
-#            canvas:
-#                Color:
-#                    rgba: (.30, .12, .03, 1)
-#                Rectangle:
-#                    size: self.size
-#                    pos: self.pos
+
+<Character>:
+    on_press: root.open_character_changer()
+    background_normal: 'images/Screenshot_1.png'
+
+<Skill>:
+    border: [0, 0, 0, 0]
+    size_hint_x: None
+    width: self.height
+
+<CharacterChanger>:
+    size_hint_y: WINDOW.width / WINDOW.height / 3
+    size_hint_x: .8
+    background: ''
+    canvas:
+        Color:
+            rgba: (.30, .12, .03, 1)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    GridLayout:
+        id: character_selection
+        cols: 3
+        spacing: WINDOW.width / 60
+        padding: WINDOW.width / 60
+
+
 
 <StartingPoint>:
     size_hint: None, None

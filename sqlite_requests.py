@@ -8,6 +8,8 @@ class Database(object):
         self.con = sqlite3.connect('database_cubes.db')
         self.cur = self.con.cursor()
         self.sqlite_create_db()
+        self.insert_characters_or_skills()
+        self.insert_characters_or_skills('characters')
 
     def close(self):
         self.cur.close()
@@ -15,6 +17,7 @@ class Database(object):
 
     def sqlite_create_db(self):
         self.cur.execute('CREATE TABLE IF NOT EXISTS completed_levels(location TEXT,level TEXT,is_completed BOOLEAN)')
+
         self.cur.execute('CREATE TABLE IF NOT EXISTS speech('
                          'location TEXT,'
                          'level TEXT,'
@@ -30,6 +33,63 @@ class Database(object):
                          'is_canceled TEXT,'
                          'is_after_game TEXT)')
 
+        self.cur.execute('CREATE TABLE IF NOT EXISTS characters('
+                         'character TEXT,'
+                         'character_available_image TEXT,'
+                         'character_not_available_image TEXT,'
+                         'level INTEGER,'
+                         'is_available TEXT,'
+                         'is_selected TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS characters_skills('
+                         'character TEXT,'
+                         'skill TEXT,'
+                         'skill_image TEXT,'
+                         'skill_level INTEGER,'
+                         'quantity INTEGER,'
+                         'mana_cost INTEGER,'
+                         'is_unblock TEXT)')
+
+    def insert_characters_or_skills(self, table='characters_skills'):
+
+        if table == 'characters' and self.table_is_empty('characters'):
+            characters = (['knight', 'images/characters/knight_available.png',
+                           'images/characters/knight_not_available.png', 1, 1, 1],
+                          ['fairy', 'images/characters/fairy_available.png',
+                           'images/characters/fairy_not_available.png', 1, 1, 0],
+                          ['spongebob', 'images/characters/spongebob_available.png',
+                           'images/characters/spongebob_not_available.png', 1, 1, 0]
+                          )
+            for ch in characters:
+                request = 'INSERT INTO characters VALUES("{}","{}","{}","{}","{}","{}")'.format(*ch)
+                self.cur.execute(request)
+        else:
+            if self.table_is_empty('characters_skills'):
+                for ch in ['knight', 'fairy', 'spongebob']:
+                    if ch == 'knight':
+                        for i in range(5):
+                            request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")'\
+                                .format(ch, 'bomb_{}'.format(i+1), 'images/skills/bomb_{}.png'.format(i+1), 1, 3, 1, 1)
+                            self.cur.execute(request)
+                    elif ch == 'fairy':
+                        request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")' \
+                            .format(ch, 'destroy_color', 'images/skills/destroy_color.png', 1, 3, 1, 1)
+                        self.cur.execute(request)
+
+        self.commit()
+
+    def get_skills(self, character):
+        request = 'SELECT * FROM characters_skills WHERE character = "{}"'.format(character)
+        self.cur.execute(request)
+
+        return list(self.cur.fetchall())
+
+    def get_characters(self):
+        request = 'SELECT * FROM characters'.format()
+        self.cur.execute(request)
+
+        return list(self.cur.fetchall())
+
     def insert_completed_level(self, location, level, is_completed="1"):
         self.cur.execute('INSERT INTO completed_levels VALUES("{0}","{1}","{2}")'.format(location, level, is_completed))
         Clock.schedule_once(self.commit)
@@ -40,7 +100,7 @@ class Database(object):
         self.cur.execute(request)
         return [x[0] for x in self.cur.fetchall()]
 
-    def insert_speech(self, values=None):
+    def _insert_speech(self, values=None):
         request = 'INSERT INTO speech VALUES("{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}","{9}","{10}",' \
                   '"{11}","{12}")'.format(*values)
         self.cur.execute(request)
@@ -138,7 +198,7 @@ class Database(object):
         self.con.commit()
 
     def table_is_empty(self, table='speech'):
-        request = 'SELECT COUNT(*) as count FROM speech'
+        request = 'SELECT COUNT(*) as count FROM {}'.format(table)
         self.cur.execute(request)
         return self.cur.fetchall()[0][0] == 0
 
