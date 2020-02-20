@@ -104,6 +104,9 @@
     border: [0, 0, 0, 0]
     size_hint_x: None
     width: self.height
+    background_down: self.background_normal
+    background_color: (0, 0, 0, 1)
+    on_state: self.background_color = (.9, .9, .9, .7) if self.state == 'down' else (0, 0, 0, 1)
 
 <CharacterChanger>:
     size_hint_y: WINDOW.width / WINDOW.height / 3
