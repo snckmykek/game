@@ -1,5 +1,6 @@
 from kivy.animation import Animation
 from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
 from kivy.lang.builder import Builder
@@ -82,6 +83,9 @@ class CubesGame(ModalView):
             return
 
         if not instance.collide_point(*touch.pos):
+            return
+
+        if self.process_skill(instance):  # Проверяет есть ли активированный бонус, если есть, работает с ним
             return
 
         self.active_column.clear()
@@ -282,6 +286,56 @@ class CubesGame(ModalView):
                         new_pos_y += self.rows * but.height
                     but.pos[1] = new_pos_y
 
+    def process_skill(self, instance):
+
+        active_skills = [s for s in self.ids.skills.children if s.state == 'down']
+        if not active_skills:
+            return False
+        else:
+            active_skill = active_skills[0]
+
+        suicidal_cubes = list()
+        suicidal_cubes.append(instance)
+        for o in self.objects:
+            if active_skill.name == 'bomb_1':
+                break
+            elif active_skill.name == 'bomb_2':
+                if o.line == instance.line:
+                    if (o.column == instance.column - 1) or (o.column == instance.column + 1):
+                        suicidal_cubes.append(o)
+            elif active_skill.name == 'bomb_3':
+                if o.column == instance.column:
+                    if (o.line == instance.line - 1) or (o.line == instance.line + 1):
+                        suicidal_cubes.append(o)
+            elif active_skill.name == 'bomb_4':
+                if o.line == instance.line:
+                    if (o.column == instance.column - 1) or (o.column == instance.column + 1):
+                        suicidal_cubes.append(o)
+                if o.column == instance.column:
+                    if (o.line == instance.line - 1) or (o.line == instance.line + 1):
+                        suicidal_cubes.append(o)
+            elif active_skill.name == 'bomb_5':
+                if (o.line == instance.line) or (o.line == instance.line - 1) or (o.line == instance.line + 1):
+                    if (o.column == instance.column - 1) or (o.column == instance.column + 1) or (o.column == instance.column):
+                        suicidal_cubes.append(o)
+            elif active_skill.name == 'destroy_color':
+                if o.background_color == instance.background_color:
+                    suicidal_cubes.append(o)
+
+        self.touch_blocked = True
+        for cube in set(suicidal_cubes):
+            self.score += 1 + (int(cube.text) if cube.text != '' else 0)
+            cube.text = ''
+            animation = Animation(size=(10, 10), d=0.15) + Animation(size=(self.a, self.a), d=0.1)
+            animation.bind(on_complete=self.after_skill_bomb)
+            animation.start(cube)
+
+        return True
+
+    def after_skill_bomb(self, animation, instance):
+        self.change_color(animation, instance)
+        Clock.schedule_once(self.boom, .2)
+
     def start_game(self, cols=5, rows=5, swipes=20, cubes=None, colors=4):
         self.cols = cols
         self.rows = rows
@@ -410,7 +464,7 @@ class CharacterChanger(ModalView):
         self.current_character = ObjectProperty
 
         for ch in db.get_characters():
-            but = Button(background_normal=ch[1] if ch[4] == '1' else ch[2])
+            but = Button(background_normal=ch[1] if ch[4] == '1' else ch[2], border=[0, 0, 0, 0])
             but.bind(on_press=self.change_character)
             but.available = True if ch[4] == '1' else False
             but.name = ch[0]
@@ -422,14 +476,22 @@ class CharacterChanger(ModalView):
         self.current_character.name = instance.name
         self.current_character.skills.clear_widgets()
         for skill in db.get_skills(self.current_character.name):
-            self.current_character.skills.add_widget(Skill(background_normal=skill[2]))
+            sk = Skill(background_normal=skill[2])
+            sk.name = skill[1]
+            self.current_character.skills.add_widget(sk)
         self.current_character.background_normal = instance.background_normal
         self.dismiss()
 
 
-class Skill(Button):
+class Skill(ToggleButton):
 
     def __init__(self, **kwargs):
         super(Skill, self).__init__(**kwargs)
 
         self.name = ''
+        self.group = 'skills'
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            self.state = 'normal'
+        return super(Skill, self).on_touch_down(touch)
