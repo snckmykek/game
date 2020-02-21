@@ -41,7 +41,7 @@
             BoxLayout:
                 Label:
                     id: text_round
-                    size_hint_x: .7
+                    size_hint_x: .6
                     text: ''
                     color: (.98, .49, 0, 1)
                     multiline: True
@@ -49,10 +49,24 @@
                     halign: 'left'
                     valign: 'middle'
                     padding: (WINDOW.width/40, WINDOW.width/40)
-                BoxLayout:
-                    size_hint_x: .3
+                RelativeLayout:
+                    size_hint_x: .4
                     Character:
                         id: character
+                    Button:
+                        id: character_level
+                        size_hint: None, None
+                        size: WINDOW.width / 10, WINDOW.width / 10
+                        background_color: (0, 0, 0, 0)
+                        canvas.before:
+                            Color:
+                                rgba: (1, 0, 0, 1)
+                            Ellipse:
+                                pos: self.pos
+                                size: self.size
+                        background_normal: ''
+                        background_down: ''
+                        text: ''
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: None

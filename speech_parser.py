@@ -23,5 +23,5 @@ def speech_parser():
 
             s2.append(val)
         s2[-1] = 0 if s2[-1] == '' else s2[-1]
-        db._insert_speech(s2)
+        db._insert_info(s2)
     db.commit()

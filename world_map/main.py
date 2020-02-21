@@ -48,6 +48,10 @@ class WorldMap(ModalView):
     def open_dialog(self):
         self.dialog.location = self.current_location.name
         self.dialog.level = '-1'
+
+        if self.dialog.dialog_is_completed():
+            return
+
         self.dialog.open()
 
     def on_pre_open(self):

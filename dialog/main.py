@@ -54,7 +54,7 @@ class Dialog(ModalView):
         self.refresh_speech_box()
 
     def refresh_speech_box(self):
-        db.fill_speech(self, self.is_after_game)
+        db.fill_info(self)
 
         self.npc_speech.text = self.current_npc_speech[1]
         self.player_speech_box.clear_widgets()
@@ -66,6 +66,9 @@ class Dialog(ModalView):
     def player_said(self, instance):
         self.current_player_speech = instance.speech
         self.refresh_speech_box()
+
+    def dialog_is_completed(self):
+        return db.dialog_is_completed(self)
 
     def clear_db(self):
         db.clear_is_completed()

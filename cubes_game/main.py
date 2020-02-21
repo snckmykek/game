@@ -44,6 +44,7 @@ class CubesGame(ModalView):
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         self.cube_pattern = 'images/pattern.png'
         self.ids.character.skills = self.ids.skills
+        self.ids.character.cubes_game = self
 
         self.objects = list()
         self.background_objects = list()
@@ -61,17 +62,21 @@ class CubesGame(ModalView):
     def on_open(self):
         self.open_dialog()
 
-    def open_dialog(self, is_after_game=False):
-        self.dialog.is_after_game = is_after_game
+    def open_dialog(self):
         self.dialog.location = self.current_location.name
         self.dialog.level = self.current_round.name
+
+        if self.dialog.dialog_is_completed():
+            return
+
         self.dialog.open()
 
     def on_pre_dismiss(self):
         self.world_map.open_location(next_location='this')
 
     def on_dismiss(self):
-        self.open_dialog(is_after_game=True)
+        pass
+        # self.open_dialog()
 
     def end_game(self, *l):
         self.ge.score = self.score
@@ -108,6 +113,9 @@ class CubesGame(ModalView):
 
     def up(self, instance, touch):
         if self.touch_blocked:
+            return
+
+        if not instance.collide_point(*touch.pos):
             return
 
         if self.starting_point:
@@ -447,10 +455,11 @@ class Character(Button):
 
         self.character_changer = CharacterChanger()
         self.skills = ObjectProperty
+        self.cubes_game = ObjectProperty
         self.name = ''
 
     def open_character_changer(self):
-        self.character_changer.current_character = self
+        self.character_changer.cubes_game = self.cubes_game
         self.character_changer.open()
 
 
@@ -459,25 +468,28 @@ class CharacterChanger(ModalView):
     def __init__(self, **kwargs):
         super(CharacterChanger, self).__init__(**kwargs)
 
-        self.current_character = ObjectProperty
+        self.cubes_game = ObjectProperty
 
         for ch in db.get_characters():
-            but = Button(background_normal=ch[1] if ch[4] == '1' else ch[2], border=[0, 0, 0, 0])
+            but = Button(background_normal=ch[1] if ch[8] == '1' else ch[2], border=[0, 0, 0, 0])
             but.bind(on_press=self.change_character)
-            but.available = True if ch[4] == '1' else False
+            but.available = True if ch[8] == '1' else False
+            but.level = ch[3]
             but.name = ch[0]
             self.ids.character_selection.add_widget(but)
 
     def change_character(self, instance):
         if not instance.available:
             return
-        self.current_character.name = instance.name
-        self.current_character.skills.clear_widgets()
-        for skill in db.get_skills(self.current_character.name):
+
+        self.cubes_game.ids.character_level.text = str(instance.level)
+        self.cubes_game.ids.character.name = instance.name
+        self.cubes_game.ids.character.skills.clear_widgets()
+        for skill in db.get_skills(instance.name):
             sk = Skill(background_normal=skill[2])
             sk.name = skill[1]
-            self.current_character.skills.add_widget(sk)
-        self.current_character.background_normal = instance.background_normal
+            self.cubes_game.ids.character.skills.add_widget(sk)
+        self.cubes_game.ids.character.background_normal = instance.background_normal
         self.dismiss()
 
 

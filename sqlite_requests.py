@@ -18,26 +18,24 @@ class Database(object):
     def sqlite_create_db(self):
         self.cur.execute('CREATE TABLE IF NOT EXISTS completed_levels(location TEXT,level TEXT,is_completed BOOLEAN)')
 
-        self.cur.execute('CREATE TABLE IF NOT EXISTS speech('
+        self.cur.execute('CREATE TABLE IF NOT EXISTS info('
                          'location TEXT,'
                          'level TEXT,'
-                         'npc TEXT,'
-                         'npc_number_speech TEXT,'
-                         'npc_speech TEXT,'
-                         'player_number_speech TEXT,'
-                         'player_speech TEXT,'
-                         'is_available_by_speech TEXT,'
-                         'alternatives TEXT,'
-                         'is_available_by_rating TEXT,'
-                         'is_completed TEXT,'
-                         'is_canceled TEXT,'
-                         'is_after_game TEXT)')
+                         'level_info_number TEXT,'
+                         'level_info TEXT,'
+                         'level_question_number TEXT,'
+                         'level_question TEXT, '
+                         'is_completed TEXT)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS characters('
                          'character TEXT,'
                          'character_available_image TEXT,'
                          'character_not_available_image TEXT,'
                          'level INTEGER,'
+                         'exp INTEGER,'
+                         'exp_for_next_level INTEGER,'
+                         'mana INTEGER,'
+                         'mana_pull INTEGER,'
                          'is_available TEXT,'
                          'is_selected TEXT)')
 
@@ -50,20 +48,29 @@ class Database(object):
                          'mana_cost INTEGER,'
                          'is_unblock TEXT)')
 
+        self.cur.execute('CREATE TABLE IF NOT EXISTS characters_levels('
+                         'character TEXT,'
+                         'level INTEGER,'
+                         'exp_for_level INTEGER)')
+
     def insert_characters_or_skills(self, table='characters_skills'):
 
         if table == 'characters' and self.table_is_empty('characters'):
             characters = (['knight', 'images/characters/knight_available.png',
-                           'images/characters/knight_not_available.png', 1, 1, 1],
+                           'images/characters/knight_not_available.png', 1, 1, 1, 1, 1, 1, 1],
                           ['fairy', 'images/characters/fairy_available.png',
-                           'images/characters/fairy_not_available.png', 1, 1, 0],
+                           'images/characters/fairy_not_available.png', 1, 1, 1, 1, 1, 1, 0],
                           ['spongebob', 'images/characters/spongebob_available.png',
-                           'images/characters/spongebob_not_available.png', 1, 0, 0]
+                           'images/characters/spongebob_not_available.png', 1, 1, 1, 1, 1, 0, 0]
                           )
             for ch in characters:
-                request = 'INSERT INTO characters VALUES("{}","{}","{}","{}","{}","{}")'.format(*ch)
+                request = 'INSERT INTO characters VALUES('
+                for val in ch:
+                    request += '"{}",'.format(val)
+                request = request[:-1] + ')'
+
                 self.cur.execute(request)
-        else:
+        elif table == 'characters_skills':
             if self.table_is_empty('characters_skills'):
                 for ch in ['knight', 'fairy', 'spongebob']:
                     if ch == 'knight':
@@ -100,109 +107,67 @@ class Database(object):
         self.cur.execute(request)
         return [x[0] for x in self.cur.fetchall()]
 
-    def _insert_speech(self, values=None):
-        request = 'INSERT INTO speech VALUES("{0}","{1}","{2}","{3}","{4}","{5}","{6}","{7}","{8}","{9}","{10}",' \
-                  '"{11}","{12}")'.format(*values)
-        self.cur.execute(request)
-
-    def fill_speech(self, dialog, after_game=False):
-
-        after_game = "1" if after_game else "0"
-
-        request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
-                  'location = "{}" AND level = "{}" AND npc != "" AND player_number_speech = "{}" ' \
-                  'AND is_completed = "0" AND is_after_game = "{}" AND is_canceled = "0"'\
-            .format(dialog.location, dialog.level, dialog.current_player_speech[0], after_game)
+    def _insert_info(self, values=None):
+        request = 'INSERT INTO info VALUES('
+        for val in values:
+            request += '"{}",'.format(val)
+        request = request[:-1] + ')'
 
         self.cur.execute(request)
-        npc_speech = self.cur.fetchall()
+    #   commit() в speech_parser.py
 
-        if (dialog.current_player_speech[0] == '') and (not npc_speech):
-            if self.get_all_player_speech(dialog, after_game):
-                npc_speech.append(tuple(['-2', 'Что-нибудь еще?']))
-
-        if not npc_speech:
-            request = 'SELECT npc_number_speech, npc_speech FROM speech WHERE ' \
-                      'location = "{}" AND level = "{}" AND npc != "" AND npc_number_speech = "-1" ' \
-                      'AND is_after_game = "{}"'.format(dialog.location, dialog.level, after_game)
-            self.cur.execute(request)
-            npc_speech = self.cur.fetchall()
-            if not npc_speech:
-                if not after_game:
-                    npc_speech.append(tuple(['-1', 'Я занят.']))
-                else:
-                    npc_speech.append(tuple(['-1', 'Еще увидимся!']))
-
-        if len(npc_speech) > 1:
-            pass
-
-        dialog.current_npc_speech = npc_speech[0]
-
-        self.set_speech_is_completed(dialog)
-
-        dialog.all_player_speech = self.get_all_player_speech(dialog, after_game)
-
-    def get_all_player_speech(self, dialog, after_game):
-        request = 'SELECT npc_number_speech, is_available_by_rating, is_available_by_speech, player_number_speech ' \
-                  'FROM speech WHERE location = "{}" AND level = "{}" AND npc != "" AND is_completed = "0" ' \
-                  'AND is_after_game = "{}" AND is_canceled = "0"'.format(dialog.location, dialog.level, after_game)
+    def dialog_is_completed(self, dialog):
+        request = 'SELECT level_info_number FROM info WHERE location = "{}" AND level = "{}" AND is_completed = "1"'\
+            .format(dialog.location, dialog.level)
 
         self.cur.execute(request)
-        available_npc_speech = list(self.cur.fetchall())
-        available_npc_speech_copy = available_npc_speech.copy()
-        npc_speech_numbers = [s[0] for s in available_npc_speech]
-        for sp in available_npc_speech_copy:
-            for num in npc_speech_numbers:
-                if num in sp[2]:
-                    available_npc_speech.remove(sp)
-                    break
 
-        available_player_speech_numbers = [s[3] for s in available_npc_speech]
+        if self.cur.fetchall():
+            return True
+        else:
+            return False
 
-        request = 'SELECT player_number_speech, player_speech FROM speech WHERE ' \
-                  'location = "{}" AND level = "{}" AND npc = "" AND player_number_speech IN ({})' \
-            .format(dialog.location, dialog.level, str(available_player_speech_numbers)[1:-1])
+    def fill_info(self, dialog):
+
+        request = 'SELECT level_info_number, level_info FROM info WHERE location = "{}" AND level = "{}" ' \
+                  'AND level_question_number = "{}"'.format(dialog.location, dialog.level, dialog.current_player_speech[0])
+
+        self.cur.execute(request)
+        level_info = self.cur.fetchall()
+
+        dialog.current_npc_speech = level_info[0]
+
+        self.set_info_is_completed(dialog)
+
+        dialog.all_player_speech = self.get_all_questions(dialog)
+
+    def get_all_questions(self, dialog):
+        request = 'SELECT level_question_number, level_question FROM info WHERE location = "{}" AND level = "{}"' \
+                  .format(dialog.location, dialog.level)
 
         self.cur.execute(request)
         return list(self.cur.fetchall())
 
-    def set_speech_is_completed(self, dialog):
-        request = 'UPDATE speech SET is_completed = "1" WHERE ' \
-                  'location = "{}" AND level = "{}" AND player_number_speech = "{}" ' \
-                  'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_player_speech[0],
-                                                        dialog.current_npc_speech[0])
+    def set_info_is_completed(self, dialog):
+        request = 'UPDATE info SET is_completed = "1" WHERE ' \
+                  'location = "{}" AND level = "{}" AND level_question_number = "{}"'\
+            .format(dialog.location, dialog.level, dialog.current_player_speech[0])
         self.cur.execute(request)
-
-        request = 'SELECT alternatives FROM speech WHERE location = "{}" AND level = "{}" ' \
-                  'AND npc_number_speech = "{}"'.format(dialog.location, dialog.level, dialog.current_npc_speech[0])
-
-        self.cur.execute(request)
-        try:
-            alternatives = self.cur.fetchall()[0][0]
-        except IndexError:
-            alternatives = list()
-        if alternatives:
-            alternatives = alternatives.split(' ')
-        for npc_number_speech in alternatives:
-            request = 'UPDATE speech SET is_canceled = "1" WHERE ' \
-                      'location = "{}" AND level = "{}" AND npc_number_speech = "{}"'\
-                .format(dialog.location, dialog.level, npc_number_speech)
-            self.cur.execute(request)
 
         self.commit()
 
     def clear_is_completed(self):
-        self.cur.execute('UPDATE speech SET is_completed = "0" WHERE npc_number_speech != "-1"')
+        self.cur.execute('UPDATE info SET is_completed = "0"')
 
     def commit(self, *l):
         self.con.commit()
 
-    def table_is_empty(self, table='speech'):
+    def table_is_empty(self, table='info'):
         request = 'SELECT COUNT(*) as count FROM {}'.format(table)
         self.cur.execute(request)
         return self.cur.fetchall()[0][0] == 0
 
-    def delete_table(self, table='speech'):
+    def delete_table(self, table='info'):
         self.cur.execute('DROP TABLE IF EXISTS {}'.format(table))
         self.commit()
 
