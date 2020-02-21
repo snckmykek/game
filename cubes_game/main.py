@@ -14,6 +14,7 @@ from dialog.main import dialog
 import math
 import random
 
+
 Builder.load_file(r'cubes_game/main.kv')
 
 

@@ -3,8 +3,8 @@
         orientation: 'vertical'
         BoxLayout:
             orientation: 'vertical'
-            size_hint_y: None
-            height: WINDOW.height - (rl.height + (WINDOW.width / 6) *2)  # * 3)
+            size_hint_y: .35
+#            height: WINDOW.height - (rl.height + (WINDOW.width / 6) *2)  # * 3)
             canvas:
                 Color:
                     rgba: (.36, .17, .05, 1)
@@ -69,9 +69,9 @@
                         text: ''
         BoxLayout:
             orientation: 'vertical'
-            size_hint_y: None
-            height: rl.height + (WINDOW.width / 6) * 2
-            AnchorLayout: # status board
+            size_hint_y: .65
+#            height: rl.height + (WINDOW.width / 6) * 2
+            AnchorLayout:
                 size_hint_y: None
                 height: WINDOW.width / 6
                 canvas:
@@ -87,8 +87,8 @@
                     spacing: WINDOW.width / 40
                     padding: WINDOW.width / 40
             AnchorLayout:
-                size_hint_y: None
-                height: rl.height + WINDOW.width / 6
+                size_hint_y: 1
+#                height: rl.height + WINDOW.width / 6
                 canvas:
                     Color:
                         rgba: (.36, .17, .05, 1)
