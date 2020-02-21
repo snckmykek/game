@@ -126,9 +126,9 @@ class Database(object):
 
         for ch in characters:
             m = 10
-            for i in range(99):
+            for i in range(100):
                 m += 2
-                request = 'INSERT INTO characters_levels VALUES("{}","{}","{}")'.format(ch, i + 1, (i + 1) * m)
+                request = 'INSERT INTO characters_levels VALUES("{}","{}","{}")'.format(ch, i, i * m)
                 self.cur.execute(request)
         self.commit()
 
