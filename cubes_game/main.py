@@ -518,6 +518,8 @@ class CharacterChanger(ModalView):
         self.character_level = ObjectProperty
         self.change_skills = True
 
+    def on_pre_open(self):
+        self.ids.character_selection.clear_widgets()
         for ch in db.get_characters():
             but = Button(background_normal=ch[1] if ch[8] == '1' else ch[2], border=[0, 0, 0, 0])
             but.bind(on_press=self.change_character)
