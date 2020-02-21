@@ -46,7 +46,7 @@ third_round.text_round = ''
 # Fourth round
 fourth_round = SingleRound()
 fourth_round.name = '4'
-fourth_round.swipes = 20
+fourth_round.swipes = 5
 fourth_round.colors = 2
 fourth_round.text_round = ''
 

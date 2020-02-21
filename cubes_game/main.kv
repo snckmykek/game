@@ -56,7 +56,7 @@
                     Button:
                         id: character_level
                         size_hint: None, None
-                        size: WINDOW.width / 10, WINDOW.width / 10
+                        size: WINDOW.width / 15, WINDOW.width / 15
                         background_color: (0, 0, 0, 0)
                         canvas.before:
                             Color:
@@ -114,6 +114,11 @@
     background_normal: 'images/Screenshot_1.png'
     border: [0, 0, 0 ,0]
 
+<Character2>:
+    on_press: root.open_character_changer(change_skills=False)
+    background_normal: 'images/Screenshot_1.png'
+    border: [0, 0, 0 ,0]
+
 <Skill>:
     border: [0, 0, 0, 0]
     size_hint_x: None
@@ -153,11 +158,30 @@
     size_hint: .8, .8
     BoxLayout:
         orientation: 'vertical'
-        Widget:
         Label:
             id: lbl
             text: 'GG! Your score is: 0'
-        Widget:
+        Label:
+            id: stars
+        BoxLayout:
+            BoxLayout:
+                size_hint_x: .6
+                orientation: 'vertical'
+                BoxLayout:
+                    orientation: 'vertical'
+                    Label:
+                        text: 'exp: '
+                    Label:
+                        id: exp
+                BoxLayout:
+                    orientation: 'vertical'
+                    Label:
+                        text: 'crystal fragments: '
+                    Label:
+                        id: crystal_fragments
+            Character2:
+                id: character
+                size_hint_x: .4
         Button:
             text: 'Play again'
             on_press: root.play_again()

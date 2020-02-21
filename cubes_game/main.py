@@ -410,14 +410,33 @@ class GameEnding(ModalView):
     def __init__(self, **kwargs):
         super(GameEnding, self).__init__(**kwargs)
 
-        self.score = 0
+        self.score = 500
         self.game = ObjectProperty
+        self.auto_dismiss = False
+        self.real_prize = {}
+        self.current_result = []
 
     def on_pre_open(self):
         self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
+        self.real_prize = self.get_real_prize()
+        self.ids.stars.text = 'Stars: ' + str(self.real_prize['stars'])
+        self.ids.exp.text = str(self.real_prize['exp'])
+        self.ids.crystal_fragments.text = str(self.real_prize['crystal_fragments'])
 
-    def on_pre_dismiss(self):
-        db.insert_completed_level(self.game.current_location.name, self.game.current_round.name)
+    def get_real_prize(self):
+        self.current_result = db.get_current_result(self.game.current_location.name, self.game.current_round.name, self.score)
+        self.up_current_result_by_bonuses(self.current_result)
+        past_result = db.get_past_result(self.game.current_location.name, self.game.current_round.name)
+
+        real_prize = {'stars': self.current_result[0],
+                      'exp': self.current_result[1] - past_result[1] if self.current_result[1] > past_result[1] else 0,
+                      'crystal_fragments': self.current_result[2] - past_result[2] if self.current_result[2] > past_result[2] else 0
+                      }
+
+        return real_prize
+
+    def up_current_result_by_bonuses(self, current_result):
+        pass
 
     def play_again(self):
         self.game.start_game(cols=self.game.cols,
@@ -427,6 +446,13 @@ class GameEnding(ModalView):
         self.dismiss()
 
     def exit_level(self):
+        db.set_completed_level(self.game.current_location.name, self.game.current_round.name)
+        if (self.real_prize['exp'] != 0) or (self.real_prize['crystal_fragments'] != 0):
+            db.set_current_result(self.game.current_location.name, self.game.current_round.name,
+                              self.current_result[1], self.current_result[2])
+
+        db.set_characters_exp(self.ids.character.name, self.real_prize['exp'])
+
         self.dismiss()
         self.game.dismiss()
 
@@ -458,7 +484,26 @@ class Character(Button):
         self.cubes_game = ObjectProperty
         self.name = ''
 
-    def open_character_changer(self):
+    def open_character_changer(self, change_skills=True):
+        self.character_changer.change_skills = change_skills
+        self.character_changer.character = self
+        self.character_changer.cubes_game = self.cubes_game
+        self.character_changer.open()
+
+
+class Character2(Button):
+
+    def __init__(self, **kwargs):
+        super(Character2, self).__init__(**kwargs)
+
+        self.character_changer = CharacterChanger()
+        self.skills = ObjectProperty
+        self.cubes_game = ObjectProperty
+        self.name = ''
+
+    def open_character_changer(self, change_skills=True):
+        self.character_changer.change_skills = change_skills
+        self.character_changer.character = self
         self.character_changer.cubes_game = self.cubes_game
         self.character_changer.open()
 
@@ -469,6 +514,9 @@ class CharacterChanger(ModalView):
         super(CharacterChanger, self).__init__(**kwargs)
 
         self.cubes_game = ObjectProperty
+        self.character = ObjectProperty
+        self.character_level = ObjectProperty
+        self.change_skills = True
 
         for ch in db.get_characters():
             but = Button(background_normal=ch[1] if ch[8] == '1' else ch[2], border=[0, 0, 0, 0])
@@ -482,14 +530,20 @@ class CharacterChanger(ModalView):
         if not instance.available:
             return
 
-        self.cubes_game.ids.character_level.text = str(instance.level)
-        self.cubes_game.ids.character.name = instance.name
-        self.cubes_game.ids.character.skills.clear_widgets()
-        for skill in db.get_skills(instance.name):
-            sk = Skill(background_normal=skill[2])
-            sk.name = skill[1]
-            self.cubes_game.ids.character.skills.add_widget(sk)
-        self.cubes_game.ids.character.background_normal = instance.background_normal
+        if self.cubes_game != ObjectProperty:
+            self.character = self.cubes_game.ids.character
+            self.character_level = self.cubes_game.ids.character_level
+
+        self.character.name = instance.name
+        self.character.background_normal = instance.background_normal
+        if self.change_skills:
+            self.character_level.text = str(instance.level)
+            self.character.skills.clear_widgets()
+            for skill in db.get_skills(instance.name):
+                sk = Skill(background_normal=skill[2])
+                sk.name = skill[1]
+                self.character.skills.add_widget(sk)
+
         self.dismiss()
 
 
