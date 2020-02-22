@@ -576,7 +576,7 @@ class Skill(ToggleButton):
         return super(Skill, self).on_touch_down(touch)
 
     def change_color(self):
-        self.c = 0 if self.state == 'down' else .88
+        self.c = (0, .72, .65, 1) if self.state == 'down' else (.88, .72, .31, 1)
 
 
 class CharacterLevelButton(Button):

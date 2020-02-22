@@ -137,10 +137,10 @@
     background_down: self.background_normal
     background_color: (0, 0, 0, 1)
     on_state: self.change_color()
-    c: .88
+    c: (.88, .72, .31, 1)
     canvas.before:
         Color:
-            rgba: (self.c, .72, .31, 1)
+            rgba: self.c
         RoundedRectangle:
             size: self.size[0] * 1.2, self.size[1] * 1.2
             pos: self.pos[0] - self.size[0] * .1, self.pos[1] - self.size[1] * .1
