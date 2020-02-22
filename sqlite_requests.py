@@ -64,7 +64,7 @@ class Database(object):
                          'skill_level INTEGER,'
                          'quantity INTEGER,'
                          'is_unblock TEXT,'
-                         'crystal_fragments_cost)')
+                         'crystal_fragments_cost INTEGER)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS characters_levels('
                          'character TEXT,'
@@ -179,7 +179,7 @@ class Database(object):
                             unblock = 1 if i == 0 else 1
                             request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")' \
                                 .format(ch, 'bomb_{}'.format(i + 1), 'images/skills/bomb_{}.png'.format(i + 1), 1, 3,
-                                        unblock, 30)
+                                        unblock, 10)
                             self.cur.execute(request)
                     elif ch == 'fairy':
                         request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")' \
@@ -246,6 +246,19 @@ class Database(object):
             character)
         self.cur.execute(request)
         return self.cur.fetchall()[0]
+
+    def get_resources(self):
+        self.cur.execute('SELECT value FROM global WHERE key = "crystal"')
+        crystal = self.cur.fetchall()[0][0]
+
+        self.cur.execute('SELECT value FROM global WHERE key = "crystal_fragments"')
+        crystal_fragments = self.cur.fetchall()[0][0]
+
+        return [crystal, crystal_fragments]
+
+    def get_skill_price(self, skill_name):
+        self.cur.execute('SELECT crystal_fragments_cost FROM characters_skills WHERE skill = "{}"'.format(skill_name))
+        return self.cur.fetchall()[0][0]
 
     def set_crystal_fragments(self, crystal_fragments):
         self.cur.execute('UPDATE global SET value = value + "{}" WHERE key = "crystal_fragments"'.format(crystal_fragments))

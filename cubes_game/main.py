@@ -9,6 +9,7 @@ from kivy.clock import Clock
 from global_variables import WINDOW
 from sqlite_requests import db
 from kivy.uix.boxlayout import BoxLayout
+from store import store
 
 from dialog.main import dialog
 
@@ -25,6 +26,7 @@ class CubesGame(ModalView):
 
         self.ge = GameEnding()
         self.dialog = dialog
+        self.store = store
 
         self.world_map = ObjectProperty
         self.current_round = ObjectProperty
@@ -71,6 +73,9 @@ class CubesGame(ModalView):
             return
 
         self.dialog.open()
+
+    def open_shop(self):
+        self.store.open()
 
     def on_pre_dismiss(self):
         self.world_map.open_location(next_location='this')
@@ -567,8 +572,7 @@ class CharacterChanger(ModalView):
                 sk.background_normal = skill[2]
                 sk.skill_level = skill[3]
                 sk.quantity = skill[4]
-                sk.mana_cost = skill[5]
-                sk.is_unblock = skill[6]
+                sk.is_unblock = skill[5]
                 sk_box.ids.quantity.text = str(sk.quantity)
                 self.character.skills.add_widget(sk_box)
 
@@ -637,3 +641,4 @@ class CharacterLevelInfo(ModalView):
 
         self.ids.character_level.text = 'Уровень: ' + str(level)
         self.ids.exp.text = 'Опыт: ' + str(current_exp) + ' из ' + str(exp_for_next_level)
+
