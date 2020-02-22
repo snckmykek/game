@@ -8,9 +8,9 @@ class Database(object):
         self.con = sqlite3.connect('database_cubes.db')
         self.cur = self.con.cursor()
         self.sqlite_create_db()
+        self.insert_characters_levels()
         self.insert_characters_or_skills()
         self.insert_characters_or_skills('characters')
-        self.insert_characters_levels()
         self.insert_levels()
 
     def close(self):
