@@ -299,7 +299,7 @@ class CubesGame(ModalView):
 
     def process_skill(self, instance):
 
-        active_skills = [s for s in self.ids.skills.children if s.state == 'down']
+        active_skills = [s.ids.skill for s in self.ids.skills.children if s.ids.skill.state == 'down']
         if not active_skills:
             return False
         else:
