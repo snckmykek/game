@@ -15,7 +15,6 @@ from dialog.main import dialog
 import math
 import random
 
-
 Builder.load_file(r'cubes_game/main.kv')
 
 
@@ -305,6 +304,8 @@ class CubesGame(ModalView):
         else:
             active_skill = active_skills[0]
 
+        active_skill.skill_is_activated()  # Уменьшает количество на 1
+
         suicidal_cubes = list()
         suicidal_cubes.append(instance)
         for o in self.objects:
@@ -327,7 +328,8 @@ class CubesGame(ModalView):
                         suicidal_cubes.append(o)
             elif active_skill.name == 'bomb_5':
                 if (o.line == instance.line) or (o.line == instance.line - 1) or (o.line == instance.line + 1):
-                    if (o.column == instance.column - 1) or (o.column == instance.column + 1) or (o.column == instance.column):
+                    if (o.column == instance.column - 1) or (o.column == instance.column + 1) or (
+                            o.column == instance.column):
                         suicidal_cubes.append(o)
             elif active_skill.name == 'destroy_color':
                 if o.background_color == instance.background_color:
@@ -369,8 +371,6 @@ class CubesGame(ModalView):
                 button.line = i
                 button.column = j
                 self.objects.append(button)
-
-        self.ids.text_round.text = self.current_round.text_round
 
         # coordinates_background_objects = [[(0, 0), (1, 0)],
         #                                   [(0, 1), (1, 1)]
@@ -426,13 +426,15 @@ class GameEnding(ModalView):
         self.ids.crystal_fragments.text = str(self.real_prize['crystal_fragments'])
 
     def get_real_prize(self):
-        self.current_result = db.get_current_result(self.game.current_location.name, self.game.current_round.name, self.score)
+        self.current_result = db.get_current_result(self.game.current_location.name, self.game.current_round.name,
+                                                    self.score)
         self.up_current_result_by_bonuses(self.current_result)
         past_result = db.get_past_result(self.game.current_location.name, self.game.current_round.name)
 
         real_prize = {'stars': self.current_result[0],
                       'exp': self.current_result[1] - past_result[1] if self.current_result[1] > past_result[1] else 0,
-                      'crystal_fragments': self.current_result[2] - past_result[2] if self.current_result[2] > past_result[2] else 0
+                      'crystal_fragments': self.current_result[2] - past_result[2] if self.current_result[2] >
+                                                                                      past_result[2] else 0
                       }
 
         return real_prize
@@ -441,6 +443,8 @@ class GameEnding(ModalView):
         pass
 
     def play_again(self):
+        self.save_result()
+
         self.game.start_game(cols=self.game.cols,
                              rows=self.game.rows,
                              swipes=self.game.round_swipes,
@@ -448,15 +452,19 @@ class GameEnding(ModalView):
         self.dismiss()
 
     def exit_level(self):
-        db.set_completed_level(self.game.current_location.name, self.game.current_round.name)
-        if (self.real_prize['exp'] != 0) or (self.real_prize['crystal_fragments'] != 0):
-            db.set_current_result(self.game.current_location.name, self.game.current_round.name,
-                              self.current_result[1], self.current_result[2])
-
-        db.set_characters_exp(self.ids.character.name, self.real_prize['exp'])
+        self.save_result()
 
         self.dismiss()
         self.game.dismiss()
+
+    def save_result(self):
+        db.set_completed_level(self.game.current_location.name, self.game.current_round.name)
+        if (self.real_prize['exp'] != 0) or (self.real_prize['crystal_fragments'] != 0):
+            db.set_current_result(self.game.current_location.name, self.game.current_round.name,
+                                  self.current_result[1], self.current_result[2])
+
+            db.set_characters_exp(self.ids.character.name, self.real_prize['exp'])
+            db.set_crystal_fragments(self.real_prize['crystal_fragments'])
 
 
 class Cube(Button):
@@ -484,7 +492,10 @@ class Character(Button):
         self.character_changer = CharacterChanger()
         self.skills = ObjectProperty
         self.cubes_game = ObjectProperty
-        self.name = ''
+        character = db.get_current_character()
+        self.name = character[0]
+        self.background_normal = character[1] if character[6] == '1' else character[2]
+        self.available = True if character[6] == '1' else False
 
     def open_character_changer(self, change_skills=True):
         self.character_changer.change_skills = change_skills
@@ -501,7 +512,10 @@ class Character2(Button):
         self.character_changer = CharacterChanger()
         self.skills = ObjectProperty
         self.cubes_game = ObjectProperty
-        self.name = ''
+        character = db.get_current_character()
+        self.name = character[0]
+        self.background_normal = character[1] if character[6] == '1' else character[2]
+        self.available = True if character[6] == '1' else False
 
     def open_character_changer(self, change_skills=True):
         self.character_changer.change_skills = change_skills
@@ -523,9 +537,10 @@ class CharacterChanger(ModalView):
     def on_pre_open(self):
         self.ids.character_selection.clear_widgets()
         for ch in db.get_characters():
-            but = Button(background_normal=ch[1] if ch[8] == '1' else ch[2], border=[0, 0, 0, 0])
+            but = Button(background_normal=ch[1] if ch[6] == '1' else ch[2], border=[0, 0, 0, 0])
             but.bind(on_press=self.change_character)
-            but.available = True if ch[8] == '1' else False
+            but.background_down = but.background_normal
+            but.available = True if ch[6] == '1' else False
             but.level = ch[3]
             but.name = ch[0]
             self.ids.character_selection.add_widget(but)
@@ -540,15 +555,22 @@ class CharacterChanger(ModalView):
 
         self.character.name = instance.name
         self.character.background_normal = instance.background_normal
+        db.set_current_character(self.character.name)
+
         if self.change_skills:
             self.character_level.text = str(instance.level)
             self.character.skills.clear_widgets()
             for skill in db.get_skills(instance.name):
-                sk = SkillBox()
-                sk.ids.skill.background_normal = skill[2]
-                sk.ids.skill.name = skill[1]
-                # sk.ids.quantity.text = '2'
-                self.character.skills.add_widget(sk)
+                sk_box = SkillBox()
+                sk = sk_box.ids.skill
+                sk.name = skill[1]
+                sk.background_normal = skill[2]
+                sk.skill_level = skill[3]
+                sk.quantity = skill[4]
+                sk.mana_cost = skill[5]
+                sk.is_unblock = skill[6]
+                sk_box.ids.quantity.text = str(sk.quantity)
+                self.character.skills.add_widget(sk_box)
 
         self.dismiss()
 
@@ -566,17 +588,26 @@ class Skill(ToggleButton):
         self.name = ''
         self.group = 'skills'
         self.skill_level = 1
-        self.quantity = 0
-        self.mana_cost = 1
         self.is_unblock = False
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos):
             self.state = 'normal'
+
+        if self.quantity <= 0:
+            return
+
         return super(Skill, self).on_touch_down(touch)
 
     def change_color(self):
         self.c = (0, .72, .65, 1) if self.state == 'down' else (.88, .72, .31, 1)
+
+    def skill_is_activated(self):
+        self.quantity -= 1
+        db.set_skill_quantity(self.name, self.quantity)
+
+        if self.quantity <= 0:
+            self.state = 'normal'
 
 
 class CharacterLevelButton(Button):
@@ -587,7 +618,6 @@ class CharacterLevelButton(Button):
         self.character_level_info = CharacterLevelInfo()
 
     def open_character_level_info(self, character_name):
-
         self.character_level_info.character_name = character_name
         self.character_level_info.open()
 

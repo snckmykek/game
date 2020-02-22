@@ -12,12 +12,17 @@ class Database(object):
         self.insert_characters_or_skills()
         self.insert_characters_or_skills('characters')
         self.insert_levels()
+        self.insert_global_info()
 
     def close(self):
         self.cur.close()
         self.con.close()
 
     def sqlite_create_db(self):
+        self.cur.execute('CREATE TABLE IF NOT EXISTS global('
+                         'key TEXT,'
+                         'value)')
+
         self.cur.execute('CREATE TABLE IF NOT EXISTS levels('
                          'location TEXT,'
                          'level TEXT,'
@@ -49,8 +54,6 @@ class Database(object):
                          'character_level INTEGER,'
                          'exp INTEGER,'
                          'exp_for_next_level INTEGER,'
-                         'mana INTEGER,'
-                         'mana_pull INTEGER,'
                          'is_available TEXT,'
                          'is_selected TEXT)')
 
@@ -60,13 +63,30 @@ class Database(object):
                          'skill_image TEXT,'
                          'skill_level INTEGER,'
                          'quantity INTEGER,'
-                         'mana_cost INTEGER,'
-                         'is_unblock TEXT)')
+                         'is_unblock TEXT,'
+                         'crystal_fragments_cost)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS characters_levels('
                          'character TEXT,'
                          'character_level INTEGER,'
                          'exp_for_level INTEGER)')
+
+    def insert_global_info(self):
+
+        if not self.table_is_empty('global'):
+            return
+
+        global_info = {'current_character': 'knight',
+                       'crystal': 0,
+                       'crystal_fragments': 0,
+                       'current_character_developing': 'knight'
+                       }
+
+        for key, val in global_info.items():
+            request = 'INSERT INTO global VALUES("{}", "{}")'.format(key, val)
+            self.cur.execute(request)
+
+        self.commit()
 
     def insert_levels(self):
 
@@ -136,11 +156,11 @@ class Database(object):
 
         if table == 'characters' and self.table_is_empty('characters'):
             characters = (['knight', 'images/characters/knight_available.png',
-                           'images/characters/knight_not_available.png', 0, 0, 1, 1, 1, 1, 1],
+                           'images/characters/knight_not_available.png', 0, 0, 1, 1, 1],
                           ['fairy', 'images/characters/fairy_available.png',
-                           'images/characters/fairy_not_available.png', 0, 0, 1, 1, 1, 1, 0],
+                           'images/characters/fairy_not_available.png', 0, 0, 1, 1, 0],
                           ['spongebob', 'images/characters/spongebob_available.png',
-                           'images/characters/spongebob_not_available.png', 0, 0, 1, 1, 1, 0, 0]
+                           'images/characters/spongebob_not_available.png', 0, 0, 1, 0, 0]
                           )
             for ch in characters:
                 request = 'INSERT INTO characters VALUES('
@@ -156,20 +176,29 @@ class Database(object):
                 for ch in ['knight', 'fairy', 'spongebob']:
                     if ch == 'knight':
                         for i in range(5):
-                            request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")'\
-                                .format(ch, 'bomb_{}'.format(i+1), 'images/skills/bomb_{}.png'.format(i+1), 1, 3, 1, 1)
+                            unblock = 1 if i == 0 else 1
+                            request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")' \
+                                .format(ch, 'bomb_{}'.format(i + 1), 'images/skills/bomb_{}.png'.format(i + 1), 1, 3,
+                                        unblock, 30)
                             self.cur.execute(request)
                     elif ch == 'fairy':
                         request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")' \
-                            .format(ch, 'destroy_color', 'images/skills/destroy_color.png', 1, 3, 1, 1)
+                            .format(ch, 'destroy_color', 'images/skills/destroy_color.png', 1, 3, 1, 50)
                         self.cur.execute(request)
 
         self.commit()
 
+    def get_current_character(self):
+        self.cur.execute('SELECT * FROM characters WHERE character = '
+                         '(SELECT value FROM global WHERE key = "current_character")')
+        character = self.cur.fetchall()[0]
+
+        return character
+
     def get_current_result(self, location, level, scores):
         request = 'SELECT difficult, exp, crystal_fragments FROM levels WHERE location = "{0}" ' \
                   'AND level = "{1}" AND scores = (SELECT MAX(scores) FROM levels WHERE ' \
-                  'location = "{2}" AND level = "{3}" AND scores <= "{4}")'\
+                  'location = "{2}" AND level = "{3}" AND scores <= "{4}")' \
             .format(location, level, location, level, scores)
 
         self.cur.execute(request)
@@ -207,14 +236,28 @@ class Database(object):
         return list(self.cur.fetchall())
 
     def get_levels(self, location, is_completed="1"):
-        request = 'SELECT level FROM levels WHERE location = "{}" AND is_completed = "{}"'.format(location, is_completed)
+        request = 'SELECT level FROM levels WHERE location = "{}" AND is_completed = "{}"'.format(location,
+                                                                                                  is_completed)
         self.cur.execute(request)
         return [x[0] for x in self.cur.fetchall()]
 
     def get_character_level_info(self, character):
-        request = 'SELECT character_level, exp, exp_for_next_level FROM characters WHERE character = "{}"'.format(character)
+        request = 'SELECT character_level, exp, exp_for_next_level FROM characters WHERE character = "{}"'.format(
+            character)
         self.cur.execute(request)
         return self.cur.fetchall()[0]
+
+    def set_crystal_fragments(self, crystal_fragments):
+        self.cur.execute('UPDATE global SET value = value + "{}" WHERE key = "crystal_fragments"'.format(crystal_fragments))
+        Clock.schedule_once(self.commit)
+
+    def set_skill_quantity(self, skill_name, quantity):
+        self.cur.execute('UPDATE characters_skills SET quantity = "{}" WHERE skill = "{}"'.format(quantity, skill_name))
+        Clock.schedule_once(self.commit)
+
+    def set_current_character(self, character_name):
+        self.cur.execute('UPDATE global SET value = "{}" WHERE key = "current_character"'.format(character_name))
+        Clock.schedule_once(self.commit)
 
     def set_completed_level(self, location, level, is_completed="1"):
         self.cur.execute('UPDATE levels SET is_completed = "{}" WHERE location = "{}" AND level = "{}"'
@@ -222,10 +265,11 @@ class Database(object):
         Clock.schedule_once(self.commit)
 
     def set_current_result(self, location, level, exp, cf):
-        self.cur.execute('SELECT COUNT() FROM completed_levels WHERE location = "{}" AND level = "{}"'.format(location, level))
+        self.cur.execute(
+            'SELECT COUNT() FROM completed_levels WHERE location = "{}" AND level = "{}"'.format(location, level))
 
         if self.cur.fetchall()[0][0] == 0:
-            request = 'INSERT INTO completed_levels VALUES("{}","{}","{}","{}")'\
+            request = 'INSERT INTO completed_levels VALUES("{}","{}","{}","{}")' \
                 .format(location, level, exp, cf)
         else:
             request = 'UPDATE completed_levels SET exp = "{}", crystal_fragments = "{}" WHERE location = "{}" ' \
@@ -272,10 +316,11 @@ class Database(object):
         request = request[:-1] + ')'
 
         self.cur.execute(request)
+
     #   commit() в speech_parser.py
 
     def dialog_is_completed(self, dialog):
-        request = 'SELECT level_info_number FROM info WHERE location = "{}" AND level = "{}" AND is_completed = "1"'\
+        request = 'SELECT level_info_number FROM info WHERE location = "{}" AND level = "{}" AND is_completed = "1"' \
             .format(dialog.location, dialog.level)
 
         self.cur.execute(request)
@@ -288,7 +333,8 @@ class Database(object):
     def fill_info(self, dialog):
 
         request = 'SELECT level_info_number, level_info FROM info WHERE location = "{}" AND level = "{}" ' \
-                  'AND level_question_number = "{}"'.format(dialog.location, dialog.level, dialog.current_player_speech[0])
+                  'AND level_question_number = "{}"'.format(dialog.location, dialog.level,
+                                                            dialog.current_player_speech[0])
 
         self.cur.execute(request)
         level_info = self.cur.fetchall()
@@ -304,14 +350,14 @@ class Database(object):
 
     def get_all_questions(self, dialog):
         request = 'SELECT level_question_number, level_question FROM info WHERE location = "{}" AND level = "{}"' \
-                  .format(dialog.location, dialog.level)
+            .format(dialog.location, dialog.level)
 
         self.cur.execute(request)
         return list(self.cur.fetchall())
 
     def set_info_is_completed(self, dialog):
         request = 'UPDATE info SET is_completed = "1" WHERE ' \
-                  'location = "{}" AND level = "{}" AND level_question_number = "{}"'\
+                  'location = "{}" AND level = "{}" AND level_question_number = "{}"' \
             .format(dialog.location, dialog.level, dialog.current_player_speech[0])
         self.cur.execute(request)
 

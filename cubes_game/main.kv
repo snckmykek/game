@@ -39,16 +39,17 @@
                     id: swipes_label
                     color: (1, .5, 0, 1)
             BoxLayout:
-                Label:
-                    id: text_round
+                RelativeLayout:
                     size_hint_x: .65
-                    text: ''
-                    color: (.98, .49, 0, 1)
-                    multiline: True
-                    text_size: self.size
-                    halign: 'left'
-                    valign: 'middle'
-                    padding: (WINDOW.width/40, WINDOW.width/40)
+                    BoxLayout:
+                        padding: (WINDOW.width/40, WINDOW.width/40)
+                    Button:
+                        border: [0, 0, 0, 0]
+                        size_hint: None, None
+                        size: WINDOW.width / 5, WINDOW.width / 5
+                        background_normal: 'images/crystal.png'
+                        background_down: 'images/crystal.png'
+                        pos_hint: {'top': 1, 'right': 1}
                 RelativeLayout:
                     size_hint_x: .35
                     Character:
@@ -103,12 +104,10 @@
 
 <Character>:
     on_press: root.open_character_changer()
-    background_normal: 'images/Screenshot_1.png'
     border: [0, 0, 0 ,0]
 
 <Character2>:
     on_press: root.open_character_changer(change_skills=False)
-    background_normal: 'images/Screenshot_1.png'
     border: [0, 0, 0 ,0]
 
 <SkillBox>:
@@ -117,14 +116,15 @@
     RelativeLayout:
         Skill:
             id: skill
+            quantity: 0
         Label:
             id: quantity
+            text: str(skill.quantity)
             size_hint: None, None
             size: self.texture_size
             x: skill.x - self.width / 2
             y: skill.y - self.height / 2
             color: (1, 1, 1, 1)
-            text: '1'
             canvas.before:
                 Color:
                     rgba: (.49, .42, .88, 1)
