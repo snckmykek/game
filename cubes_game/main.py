@@ -8,6 +8,7 @@ from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 from global_variables import WINDOW
 from sqlite_requests import db
+from kivy.uix.boxlayout import BoxLayout
 
 from dialog.main import dialog
 
@@ -543,11 +544,18 @@ class CharacterChanger(ModalView):
             self.character_level.text = str(instance.level)
             self.character.skills.clear_widgets()
             for skill in db.get_skills(instance.name):
-                sk = Skill(background_normal=skill[2])
-                sk.name = skill[1]
+                sk = SkillBox()
+                sk.ids.skill.background_normal = skill[2]
+                sk.ids.skill.name = skill[1]
+                # sk.ids.quantity.text = '2'
                 self.character.skills.add_widget(sk)
 
         self.dismiss()
+
+
+class SkillBox(BoxLayout):
+    def __init__(self, **kwargs):
+        super(SkillBox, self).__init__(**kwargs)
 
 
 class Skill(ToggleButton):
@@ -557,8 +565,45 @@ class Skill(ToggleButton):
 
         self.name = ''
         self.group = 'skills'
+        self.skill_level = 1
+        self.quantity = 0
+        self.mana_cost = 1
+        self.is_unblock = False
 
     def on_touch_down(self, touch):
         if not self.collide_point(*touch.pos):
             self.state = 'normal'
         return super(Skill, self).on_touch_down(touch)
+
+    def change_color(self):
+        self.c = 0 if self.state == 'down' else .88
+
+
+class CharacterLevelButton(Button):
+
+    def __init__(self, **kwargs):
+        super(CharacterLevelButton, self).__init__(**kwargs)
+
+        self.character_level_info = CharacterLevelInfo()
+
+    def open_character_level_info(self, character_name):
+
+        self.character_level_info.character_name = character_name
+        self.character_level_info.open()
+
+
+class CharacterLevelInfo(ModalView):
+
+    def __init__(self, **kwargs):
+        super(CharacterLevelInfo, self).__init__(**kwargs)
+
+        self.character_name = ''
+
+    def on_pre_open(self):
+        info = db.get_character_level_info(self.character_name)
+        level = info[0]
+        current_exp = info[1]
+        exp_for_next_level = info[2]
+
+        self.ids.character_level.text = 'Уровень: ' + str(level)
+        self.ids.exp.text = 'Опыт: ' + str(current_exp) + ' из ' + str(exp_for_next_level)

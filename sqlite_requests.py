@@ -136,11 +136,11 @@ class Database(object):
 
         if table == 'characters' and self.table_is_empty('characters'):
             characters = (['knight', 'images/characters/knight_available.png',
-                           'images/characters/knight_not_available.png', 0, 1, 1, 1, 1, 1, 1],
+                           'images/characters/knight_not_available.png', 0, 0, 1, 1, 1, 1, 1],
                           ['fairy', 'images/characters/fairy_available.png',
-                           'images/characters/fairy_not_available.png', 0, 1, 1, 1, 1, 1, 0],
+                           'images/characters/fairy_not_available.png', 0, 0, 1, 1, 1, 1, 0],
                           ['spongebob', 'images/characters/spongebob_available.png',
-                           'images/characters/spongebob_not_available.png', 0, 1, 1, 1, 1, 0, 0]
+                           'images/characters/spongebob_not_available.png', 0, 0, 1, 1, 1, 0, 0]
                           )
             for ch in characters:
                 request = 'INSERT INTO characters VALUES('
@@ -149,6 +149,8 @@ class Database(object):
                 request = request[:-1] + ')'
 
                 self.cur.execute(request)
+
+                self.set_characters_exp(ch[0], 0)
         elif table == 'characters_skills':
             if self.table_is_empty('characters_skills'):
                 for ch in ['knight', 'fairy', 'spongebob']:
@@ -204,6 +206,16 @@ class Database(object):
 
         return list(self.cur.fetchall())
 
+    def get_levels(self, location, is_completed="1"):
+        request = 'SELECT level FROM levels WHERE location = "{}" AND is_completed = "{}"'.format(location, is_completed)
+        self.cur.execute(request)
+        return [x[0] for x in self.cur.fetchall()]
+
+    def get_character_level_info(self, character):
+        request = 'SELECT character_level, exp, exp_for_next_level FROM characters WHERE character = "{}"'.format(character)
+        self.cur.execute(request)
+        return self.cur.fetchall()[0]
+
     def set_completed_level(self, location, level, is_completed="1"):
         self.cur.execute('UPDATE levels SET is_completed = "{}" WHERE location = "{}" AND level = "{}"'
                          .format(is_completed, location, level))
@@ -233,15 +245,25 @@ class Database(object):
         self.cur.execute(request)
         level = self.cur.fetchall()[0][0]
 
-        request = 'UPDATE characters SET exp = "{}", character_level = "{}" WHERE character = "{}"'.format(exp, level, character)
+        # for max lvl
+        request = 'SELECT MAX(exp_for_level) FROM characters_levels WHERE character = "{}"'.format(character)
+        self.cur.execute(request)
+        max_exp = self.cur.fetchall()[0][0]
+
+        if exp >= max_exp:  # for max lvl
+            exp = max_exp
+            exp_for_next_level = max_exp
+        else:
+            request = 'SELECT MIN(exp_for_level) FROM characters_levels WHERE character = "{}" ' \
+                      'AND exp_for_level > "{}"'.format(character, exp)
+            self.cur.execute(request)
+            exp_for_next_level = self.cur.fetchall()[0][0]
+
+        request = 'UPDATE characters SET exp = "{}", character_level = "{}", exp_for_next_level = "{}" ' \
+                  'WHERE character = "{}"'.format(exp, level, exp_for_next_level, character)
         self.cur.execute(request)
 
         Clock.schedule_once(self.commit)
-
-    def get_levels(self, location, is_completed="1"):
-        request = 'SELECT level FROM levels WHERE location = "{}" AND is_completed = "{}"'.format(location, is_completed)
-        self.cur.execute(request)
-        return [x[0] for x in self.cur.fetchall()]
 
     def _insert_info(self, values=None):
         request = 'INSERT INTO info VALUES('

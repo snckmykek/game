@@ -53,27 +53,19 @@
                     size_hint_x: .35
                     Character:
                         id: character
-                    Button:
+                    CharacterLevelButton:
                         id: character_level
                         size_hint: None, None
                         size: WINDOW.width / 15, WINDOW.width / 15
-                        background_color: (0, 0, 0, 0)
-                        canvas.before:
-                            Color:
-                                rgba: (1, 0, 0, 1)
-                            Ellipse:
-                                pos: self.pos
-                                size: self.size
-                        background_normal: ''
-                        background_down: ''
-                        text: ''
+                        on_press: self.open_character_level_info(character.name)
+
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: .65
 #            height: rl.height + (WINDOW.width / 6) * 2
             AnchorLayout:
-                size_hint_y: None
-                height: WINDOW.width / 6
+                size_hint_y: .15
+#                height: WINDOW.width / 6
                 canvas:
                     Color:
                         rgba: (.30, .12, .03, 1)
@@ -81,13 +73,13 @@
                         size: self.size
                         pos: self.pos
                 BoxLayout:
+                    id: skills
                     size_hint_x: None
                     width: self.minimum_width
-                    id: skills
-                    spacing: WINDOW.width / 40
-                    padding: WINDOW.width / 40
+                    spacing: WINDOW.width / 20
+                    padding: WINDOW.width / 30
             AnchorLayout:
-                size_hint_y: 1
+                size_hint_y: .85
 #                height: rl.height + WINDOW.width / 6
                 canvas:
                     Color:
@@ -119,13 +111,40 @@
     background_normal: 'images/Screenshot_1.png'
     border: [0, 0, 0 ,0]
 
-<Skill>:
-    border: [0, 0, 0, 0]
+<SkillBox>:
     size_hint_x: None
     width: self.height
+    RelativeLayout:
+        Skill:
+            id: skill
+        Label:
+            id: quantity
+            size_hint: None, None
+            size: self.texture_size
+            x: skill.x - self.width / 2
+            y: skill.y - self.height / 2
+            color: (1, 1, 1, 1)
+            text: '1'
+            canvas.before:
+                Color:
+                    rgba: (.49, .42, .88, 1)
+                Ellipse:
+                    pos: self.center_x - self.height / 2, self.y
+                    size: self.height, self.height
+
+<Skill>:
+    border: [0, 0, 0, 0]
     background_down: self.background_normal
     background_color: (0, 0, 0, 1)
-    on_state: self.background_color = (.9, .9, .9, .7) if self.state == 'down' else (0, 0, 0, 1)
+    on_state: self.change_color()
+    c: .88
+    canvas.before:
+        Color:
+            rgba: (self.c, .72, .31, 1)
+        RoundedRectangle:
+            size: self.size[0] * 1.2, self.size[1] * 1.2
+            pos: self.pos[0] - self.size[0] * .1, self.pos[1] - self.size[1] * .1
+            radius: [self.height / 5,]
 
 <CharacterChanger>:
     size_hint_y: WINDOW.width / WINDOW.height / 3
@@ -191,3 +210,24 @@
 
 <Cube>:
     border: (0, 0, 0, 0)
+
+<CharacterLevelButton>:
+    background_color: (0, 0, 0, 0)
+    canvas.before:
+        Color:
+            rgba: (1, 0, 0, 1)
+        Ellipse:
+            pos: self.pos
+            size: self.size
+    background_normal: ''
+    background_down: ''
+    text: ''
+
+
+<CharacterLevelInfo>:
+    size_hint: .8, .3
+    BoxLayout:
+        Label:
+            id: character_level
+        Label:
+            id: exp
