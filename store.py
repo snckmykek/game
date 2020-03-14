@@ -124,7 +124,7 @@ class Deal(ModalView):
         self.skill_shop.quantity += extra_quantity
         db.set_crystal_fragments((extra_quantity * self.price) * (- 1))
         db.set_skill_quantity(self.skill_shop.name, self.skill_shop.quantity)
-        
+
         store.calculate_resources()
 
     def on_pre_dismiss(self):

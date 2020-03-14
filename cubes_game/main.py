@@ -466,7 +466,7 @@ class GameEnding(ModalView):
         db.set_completed_level(self.game.current_location.name, self.game.current_round.name)
         if (self.real_prize['exp'] != 0) or (self.real_prize['crystal_fragments'] != 0):
             db.set_current_result(self.game.current_location.name, self.game.current_round.name,
-                                  self.current_result[1], self.current_result[2])
+                                  self.current_result[1], self.current_result[2], self.current_result[0])
 
             db.set_characters_exp(self.ids.character.name, self.real_prize['exp'])
             db.set_crystal_fragments(self.real_prize['crystal_fragments'])

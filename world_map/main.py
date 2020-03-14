@@ -19,13 +19,32 @@ class Round(Button):
     def __init__(self, **kwargs):
         super(Round, self).__init__(**kwargs)
 
-        self.background_normal = 'images/ne_najataya.png'
-        self.background_down = 'images/najataya.png'
+        self.background_normal = 'images/level_pins/ne_najataya.png'
+        self.background_down = 'images/level_pins/najataya.png'
         self.round = 0
-        self.size = [WINDOW.width/8, WINDOW.width/8]
+        self.size = [WINDOW.width / 4, WINDOW.width / 4]
+        self.size_1 = [0, 0]
+        self.size_2 = [0, 0]
+        self.size_3 = [0, 0]
+        self.size_lock = [self.width / 2, self.height / 2]
 
     def animate_round(self):
         pass
+
+    def change_stars(self, qty_stars):
+        self.size_1 = [0, 0]
+        self.size_2 = [0, 0]
+        self.size_3 = [0, 0]
+        self.size_lock = [0, 0]
+
+        if qty_stars == -1:
+            self.size_lock = [self.width / 2, self.height / 2]
+        if qty_stars > 0:
+            self.size_1 = [self.width / 3.5, self.height / 3.5]
+        if qty_stars > 1:
+            self.size_2 = [self.width / 3.5, self.height / 3.5]
+        if qty_stars > 2:
+            self.size_3 = [self.width / 3.5, self.height / 3.5]
 
 
 class WorldMap(ModalView):
@@ -75,38 +94,26 @@ class WorldMap(ModalView):
         self.coords = self.current_location.coords
 
         self.ids.lines.canvas.before.clear()
-
         with self.ids.lines.canvas.before:
             Rectangle(source=self.current_location.background, size=WINDOW.size, pos=self.ids.rl.pos)
-            for i, coord in enumerate(self.coords):
-                if i == 0:
-                    continue
-                Color(.1, .1, 1, .3)
-                bezier = list([z + WINDOW.width/16 for z in self.coords[i]])
-                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + WINDOW.width/16 + WINDOW.width/16,
-                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - WINDOW.width/16 + WINDOW.width/16])
-                bezier += list([z + WINDOW.width/16 for z in self.coords[i - 1]])
-                Line(width=WINDOW.width/60, bezier=bezier, bezier_precision=WINDOW.width/50)
-
-        with self.ids.lines.canvas.before:
-            completed_levels = db.get_levels(self.current_location.name)
-            for i, coord in enumerate(self.coords):
-                if i == 0 or str(i) not in completed_levels:
-                    continue
-                Color(.1, .1, 1, .4)
-                bezier = list([z + WINDOW.width/16 for z in self.coords[i]])
-                bezier += list([(self.coords[i][0] + self.coords[i - 1][0]) / 2 + WINDOW.width/16 + WINDOW.width/16,
-                                (self.coords[i][1] + self.coords[i - 1][1]) / 2 - WINDOW.width/16 + WINDOW.width/16])
-                bezier += list([z + WINDOW.width/16 for z in self.coords[i - 1]])
-                Line(width=WINDOW.width/60, bezier=bezier, bezier_precision=WINDOW.width/50)
 
         self.world_map.clear_widgets()
         for i, coord in enumerate(self.coords):
-            round_button = self.current_location.round_button(text=str(i), color=(0, 0, 0, 1), pos=coord)
+            round_button = self.current_location.round_button(text=str(i), color=(0, 0, 0, 0), center=coord)
             round_button.bind(on_release=self.play)
             round_button.round = i
-            round_button.background_normal = 'images/ne_najataya.png'
-            round_button.background_down = 'images/najataya.png'
+            round_button.background_normal = 'images/level_pins/ne_najataya.png'
+            round_button.background_down = 'images/level_pins/najataya.png'
+            if i == 0:
+                check = db.get_past_result(self.current_location.name, i)[3]
+                round_button.change_stars(0 if check == -1 else check)
+            else:
+                check = db.get_past_result(self.current_location.name, i-1)[3]
+                if check > 0:
+                    check2 = db.get_past_result(self.current_location.name, i)[3]
+                    round_button.change_stars(0 if check2 == -1 else check2)
+                else:
+                    round_button.change_stars(-1)
             self.world_map.add_widget(round_button)
 
         if (not self.is_first_open_location) and (next_location != 'this'):
@@ -130,6 +137,8 @@ class WorldMap(ModalView):
 
         self.cubes_game.open()
 
+    # def on_touch_down(self, touch):
+    #     print([WINDOW.width / touch.pos[0], WINDOW.height / touch.pos[1]])
 
 #######################################################
 # Worlds / Locations
@@ -145,11 +154,13 @@ class SingleWorld:
 
 # First Location
 first_location = SingleWorld()
-first_location.coords = [(WINDOW.width / 8, WINDOW.height * 1 / 5), (WINDOW.width * 2.5 / 6, WINDOW.height * 2 / 5),
-                         (WINDOW.width / 8, WINDOW.height * 2.2 / 5), (WINDOW.width * 2.5 / 6, WINDOW.height * 3 / 5),
-                         (WINDOW.width / 9, WINDOW.height * 3.2 / 5), (WINDOW.width * 3 / 6, WINDOW.height * 4 / 5),
-                         (WINDOW.width / 6, WINDOW.height * 4 / 5)]
-first_location.background = 'images/world_map_1.png'
+first_location.coords = [(WINDOW.width / 2.6, WINDOW.height / 6.15), (WINDOW.width / 1.55, WINDOW.height / 5.00),
+                         (WINDOW.width / 1.19, WINDOW.height / 3.45), (WINDOW.width / 1.67, WINDOW.height / 2.93),
+                         (WINDOW.width / 2.81, WINDOW.height / 2.65), (WINDOW.width / 3.13, WINDOW.height / 1.92),
+                         (WINDOW.width / 1.57, WINDOW.height / 1.76), (WINDOW.width / 1.17, WINDOW.height / 1.55),
+                         (WINDOW.width / 1.65, WINDOW.height / 1.38), (WINDOW.width / 3.00, WINDOW.height / 1.34),
+                         (WINDOW.width / 4.16, WINDOW.height / 1.18), (WINDOW.width / 2.0, WINDOW.height / 1.13)]
+first_location.background = 'images/maps/world_map_1.png'
 first_location.round_button = Round
 first_location.name = 'Первая'
 
@@ -159,7 +170,7 @@ second_location.coords = [(WINDOW.width * 2 / 8, WINDOW.height * 2 / 5),
                           (WINDOW.width * 2.5 / 6, WINDOW.height * 2 / 5),
                           (WINDOW.width / 8, WINDOW.height * 2.6 / 9),
                           (WINDOW.width * 2.5 / 6, WINDOW.height * 3 / 3.5)]
-second_location.background = 'images/world_map_2.png'
+second_location.background = 'images/maps/world_map_2.png'
 second_location.round_button = Round
 second_location.name = 'Second'
 

@@ -3,6 +3,28 @@
     size_hint: None, None
     border: (0, 0, 0, 0)
     on_state: root.animate_round()
+    size_1: [0, 0]
+    size_2: [0, 0]
+    size_3: [0, 0]
+    size_lock: [0, 0]
+    canvas:
+        Rectangle:
+            size: self.size_1
+            pos: [self.center_x - self.width/5.5 - (self.width/3.5)/2, self.center_y - self.height/3.5]
+            source: 'images/level_pins/star.png'
+        Rectangle:
+            size: self.size_3
+            pos: [self.center_x + self.width/5.5 - (self.width/3.5)/2, self.center_y - self.height/3.5]
+            source: 'images/level_pins/star.png'
+        Rectangle:
+            size: self.size_2
+            pos: [self.center_x - (self.width/3.5)/2, self.center_y - self.height/3]
+            source: 'images/level_pins/star.png'
+        Rectangle:
+            size: self.size_lock
+            pos: [self.center_x - (self.width/2)/2, self.center_y - self.height/3]
+            source: 'images/level_pins/lock.png'
+
 
 
 <WorldMap>:

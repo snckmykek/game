@@ -36,7 +36,8 @@ class Database(object):
                          'location TEXT,'
                          'level TEXT,'
                          'exp INTEGER,'
-                         'crystal_fragments INTEGER)')
+                         'crystal_fragments INTEGER,'
+                         'stars INTEGER)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS info('
                          'location TEXT,'
@@ -210,7 +211,7 @@ class Database(object):
         return result
 
     def get_past_result(self, location, level):
-        request = 'SELECT exp, crystal_fragments FROM completed_levels WHERE location = "{0}" ' \
+        request = 'SELECT exp, crystal_fragments, stars FROM completed_levels WHERE location = "{0}" ' \
                   'AND level = "{1}"'.format(location, level)
 
         self.cur.execute(request)
@@ -220,7 +221,7 @@ class Database(object):
             r.extend(result[0])
             result = r
         else:
-            result = [0, 0, 0]
+            result = [0, 0, 0, -1]
         return result
 
     def get_skills(self, character):
@@ -261,7 +262,8 @@ class Database(object):
         return self.cur.fetchall()[0][0]
 
     def set_crystal_fragments(self, crystal_fragments):
-        self.cur.execute('UPDATE global SET value = value + "{}" WHERE key = "crystal_fragments"'.format(crystal_fragments))
+        self.cur.execute(
+            'UPDATE global SET value = value + "{}" WHERE key = "crystal_fragments"'.format(crystal_fragments))
         Clock.schedule_once(self.commit)
 
     def set_skill_quantity(self, skill_name, quantity):
@@ -277,16 +279,16 @@ class Database(object):
                          .format(is_completed, location, level))
         Clock.schedule_once(self.commit)
 
-    def set_current_result(self, location, level, exp, cf):
+    def set_current_result(self, location, level, exp, cf, stars):
         self.cur.execute(
             'SELECT COUNT() FROM completed_levels WHERE location = "{}" AND level = "{}"'.format(location, level))
 
         if self.cur.fetchall()[0][0] == 0:
-            request = 'INSERT INTO completed_levels VALUES("{}","{}","{}","{}")' \
-                .format(location, level, exp, cf)
+            request = 'INSERT INTO completed_levels VALUES("{}","{}","{}","{}","{}")' \
+                .format(location, level, exp, cf, stars)
         else:
-            request = 'UPDATE completed_levels SET exp = "{}", crystal_fragments = "{}" WHERE location = "{}" ' \
-                      'AND level = "{}"'.format(exp, cf, location, level)
+            request = 'UPDATE completed_levels SET exp = "{}", crystal_fragments = "{}", stars = "{}" WHERE ' \
+                      'location = "{}" AND level = "{}"'.format(exp, cf, stars, location, level)
 
         self.cur.execute(request)
 
