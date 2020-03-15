@@ -11,7 +11,7 @@
                 Rectangle:
                     size: self.size
                     pos: self.pos
-            BoxLayout: # status board
+            StackLayout: # status board
                 size_hint_y: None
                 height: WINDOW.width / 6
                 canvas:
@@ -22,35 +22,36 @@
                         pos: self.pos
                 Button:
                     text: '<<back'
+                    size_hint_x: .2
                     color: (1, .5, 0, 1)
                     background_normal: ''
                     background_color: (.30, .12, .03, 1)
                     on_press: root.dismiss()
-                Label:
-                    text: 'Score: '
-                    color: (1, .5, 0, 1)
-                Label:
-                    id: score_label
-                    color: (1, .5, 0, 1)
-                Label:
-                    text: 'Swipe: '
-                    color: (1, .5, 0, 1)
-                Label:
-                    id: swipes_label
-                    color: (1, .5, 0, 1)
+                Button:
+                    border: [0, 0, 0, 0]
+                    size_hint: None, None
+                    size: WINDOW.width / 6, WINDOW.width / 6
+                    background_normal: 'images/crystal.png'
+                    background_down: 'images/crystal.png'
+                    on_press: root.open_shop()
+
             BoxLayout:
                 RelativeLayout:
                     size_hint_x: .65
                     BoxLayout:
                         padding: (WINDOW.width/40, WINDOW.width/40)
-                    Button:
-                        border: [0, 0, 0, 0]
-                        size_hint: None, None
-                        size: WINDOW.width / 5, WINDOW.width / 5
-                        background_normal: 'images/crystal.png'
-                        background_down: 'images/crystal.png'
-                        pos_hint: {'top': 1, 'right': 1}
-                        on_press: root.open_shop()
+                        Label:
+                            text: 'Score: '
+                            color: (1, .5, 0, 1)
+                        Label:
+                            id: score_label
+                            color: (1, .5, 0, 1)
+                        Label:
+                            text: 'Swipe: '
+                            color: (1, .5, 0, 1)
+                        Label:
+                            id: swipes_label
+                            color: (1, .5, 0, 1)
                 RelativeLayout:
                     size_hint_x: .35
                     Character:

@@ -7,6 +7,7 @@ from kivy.graphics import Rectangle, Color, Line
 from kivy.uix.widget import Widget
 from sqlite_requests import db
 from dialog.main import dialog
+from kivy.animation import Animation
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
@@ -26,7 +27,8 @@ class Round(Button):
         self.size_1 = [0, 0]
         self.size_2 = [0, 0]
         self.size_3 = [0, 0]
-        self.size_lock = [self.width / 2, self.height / 2]
+        self.size_lock = [self.width, self.height]
+        self.size_lock_default = self.size_lock.copy()
 
     def animate_round(self):
         pass
@@ -38,13 +40,15 @@ class Round(Button):
         self.size_lock = [0, 0]
 
         if qty_stars == -1:
-            self.size_lock = [self.width / 2, self.height / 2]
+            self.size_lock = [self.width, self.height]
         if qty_stars > 0:
             self.size_1 = [self.width / 3.5, self.height / 3.5]
         if qty_stars > 1:
             self.size_2 = [self.width / 3.5, self.height / 3.5]
         if qty_stars > 2:
             self.size_3 = [self.width / 3.5, self.height / 3.5]
+
+        self.size_lock_default = self.size_lock.copy()
 
 
 class WorldMap(ModalView):
@@ -108,7 +112,7 @@ class WorldMap(ModalView):
                 check = db.get_past_result(self.current_location.name, i)[3]
                 round_button.change_stars(0 if check == -1 else check)
             else:
-                check = db.get_past_result(self.current_location.name, i-1)[3]
+                check = db.get_past_result(self.current_location.name, i - 1)[3]
                 if check > 0:
                     check2 = db.get_past_result(self.current_location.name, i)[3]
                     round_button.change_stars(0 if check2 == -1 else check2)
@@ -127,6 +131,10 @@ class WorldMap(ModalView):
         except IndexError:
             return
 
+        if l[0].size_lock != [0, 0]:  # Если раунд заблочен
+            self.animation_its_lock(l[0])
+            return
+
         self.cubes_game.world_map = self
         self.cubes_game.current_location = self.current_location
         self.cubes_game.current_round = current_round
@@ -137,8 +145,14 @@ class WorldMap(ModalView):
 
         self.cubes_game.open()
 
+    def animation_its_lock(self, round):
+        s = round.size_lock
+        anim = Animation(size_lock=[s[0] * 1.1, s[1] * 1.1], d=.1) + Animation(size_lock=round.size_lock_default, d=.1)
+        anim.start(round)
+
     # def on_touch_down(self, touch):
     #     print([WINDOW.width / touch.pos[0], WINDOW.height / touch.pos[1]])
+
 
 #######################################################
 # Worlds / Locations
