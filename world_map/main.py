@@ -8,9 +8,11 @@ from kivy.uix.widget import Widget
 from sqlite_requests import db
 from dialog.main import dialog
 from kivy.animation import Animation
+import random
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
+from cubes_game.animatoins import do_animation
 
 Builder.load_file(r'world_map/main.kv')
 
@@ -51,6 +53,16 @@ class Round(Button):
         self.size_lock_default = self.size_lock.copy()
 
 
+class ParameterButton(Button):
+
+    def __init__(self, **kwargs):
+        super(ParameterButton, self).__init__(**kwargs)
+
+        self.parameter = ''
+        self.default_center_x = 0
+        self.border = [0, 0, 0, 0]
+
+
 class WorldMap(ModalView):
 
     def __init__(self, **kwargs):
@@ -64,9 +76,67 @@ class WorldMap(ModalView):
         self.coords = tuple()
         self.locations = locations
         self.current_location = self.locations[0]
-        self.ids.rl.add_widget(
-            Button(text='next', size_hint=(None, None), width=WINDOW.width / 5, height=WINDOW.height / 12,
-                   on_press=self.open_location, pos_hint={'x': .8}))
+        self.menu_buttons = list()
+        self.add_buttons()
+
+    def add_buttons(self):
+        button = ParameterButton(text='next', size_hint=(None, None), width=WINDOW.width / 5, height=WINDOW.height / 12,
+                            on_press=self.open_next_or_prev_location, pos_hint={'x': .8})
+        button.parameter = 'next'
+        self.ids.rl.add_widget(button)
+
+        button = ParameterButton(text='prev', size_hint=(None, None), width=WINDOW.width / 5, height=WINDOW.height / 12,
+                                 on_press=self.open_next_or_prev_location, pos_hint={'x': 0})
+        button.parameter = 'prev'
+        self.ids.rl.add_widget(button)
+
+        open_close_menu_button = ParameterButton(text='', size_hint=(None, None), size=[WINDOW.height / 12, WINDOW.height / 12],
+                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.77])
+        open_close_menu_button.parameter = 'open'
+        open_close_menu_button.background_normal = 'images/maps/menu_buttons/open_menu_button.png'
+        open_close_menu_button.background_down = 'images/maps/menu_buttons/open_menu_button.png'
+        self.ids.rl.add_widget(open_close_menu_button)
+
+        self.menu_buttons.clear()
+
+        button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
+                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.7])
+        button.parameter = 'teleport'
+        button.background_normal = 'images/maps/menu_buttons/teleport_menu_button.png'
+        button.background_down = 'images/maps/menu_buttons/teleport_menu_button_down.png'
+        self.menu_buttons.append(button)
+
+        button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
+                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.6])
+        button.parameter = 'inventory'
+        button.background_normal = 'images/maps/menu_buttons/inventory_menu_button.png'
+        button.background_down = 'images/maps/menu_buttons/inventory_menu_button_down.png'
+        self.menu_buttons.append(button)
+
+        button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
+                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.5])
+        button.parameter = 'characters'
+        button.background_normal = 'images/maps/menu_buttons/characters_menu_button.png'
+        button.background_down = 'images/maps/menu_buttons/characters_menu_button_down.png'
+        self.menu_buttons.append(button)
+
+        button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
+                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.4])
+        button.parameter = 'shop'
+        button.background_normal = 'images/maps/menu_buttons/shop_menu_button.png'
+        button.background_down = 'images/maps/menu_buttons/shop_menu_button_down.png'
+        self.menu_buttons.append(button)
+
+        button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
+                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.3])
+        button.parameter = 'exit'
+        button.background_normal = 'images/maps/menu_buttons/exit_menu_button.png'
+        button.background_down = 'images/maps/menu_buttons/exit_menu_button_down.png'
+        self.menu_buttons.append(button)
+
+        for but in self.menu_buttons:
+            but.center_x = open_close_menu_button.center_x
+            self.ids.rl.add_widget(but)
 
     def open_dialog(self):
         self.dialog.location = self.current_location.name
@@ -79,26 +149,53 @@ class WorldMap(ModalView):
 
     def on_pre_open(self):
         self.is_first_open_location = True
-        self.open_location(None, 'first')
+        self.open_location(self.locations[0])
 
     def on_open(self):
         self.open_dialog()
 
-    def open_location(self, instance=None, next_location='next'):
-        if next_location == 'first':
-            self.current_location = self.locations[0]
-        elif next_location == 'next':
+    def open_close_menu(self, instance):
+        if instance.parameter == 'open':
+            instance.parameter = 'close'
+            instance.background_normal = 'images/maps/menu_buttons/close_menu_button.png'
+            instance.background_down = 'images/maps/menu_buttons/close_menu_button.png'
+            do_animation('open_close_menu_buttons', instance, [WINDOW.height / 9, WINDOW.height / 9])
+            for but in self.menu_buttons:
+                do_animation('open_close_menu_buttons', but, [WINDOW.height / 9, WINDOW.height / 9])
+        elif instance.parameter == 'close':
+            instance.parameter = 'open'
+            instance.background_normal = 'images/maps/menu_buttons/open_menu_button.png'
+            instance.background_down = 'images/maps/menu_buttons/open_menu_button.png'
+            do_animation('open_close_menu_buttons', instance, [WINDOW.height / 12, WINDOW.height / 12])
+            for but in self.menu_buttons:
+                do_animation('open_close_menu_buttons', but, [0, 0])
+        else:
+            return
+
+    def open_next_or_prev_location(self, instance=None):
+        if instance.parameter == 'next':
             try:
-                self.current_location = self.locations[self.locations.index(self.current_location) + 1]
+                location = self.locations[self.locations.index(self.current_location) + 1]
             except IndexError:
-                self.current_location = self.locations[0]
-        elif next_location == 'this':
-            pass
+                location = self.locations[0]
+        elif instance.parameter == 'prev':
+            try:
+                location = self.locations[self.locations.index(self.current_location) - 1]
+            except IndexError:
+                location = self.locations[-1]
+        else:
+            location = self.current_location
+
+        self.open_location(location)
+
+    def open_location(self, next_location=None):
+
+        self.current_location = next_location if next_location is not None else self.current_location
 
         self.coords = self.current_location.coords
 
-        self.ids.lines.canvas.before.clear()
-        with self.ids.lines.canvas.before:
+        self.ids.world_background.canvas.before.clear()
+        with self.ids.world_background.canvas.before:
             Rectangle(source=self.current_location.background, size=WINDOW.size, pos=self.ids.rl.pos)
 
         self.world_map.clear_widgets()
@@ -132,7 +229,7 @@ class WorldMap(ModalView):
             return
 
         if l[0].size_lock != [0, 0]:  # Если раунд заблочен
-            self.animation_its_lock(l[0])
+            do_animation('its_lock', l[0])
             return
 
         self.cubes_game.world_map = self
@@ -145,13 +242,7 @@ class WorldMap(ModalView):
 
         self.cubes_game.open()
 
-    def animation_its_lock(self, round):
-        s = round.size_lock
-        anim = Animation(size_lock=[s[0] * 1.1, s[1] * 1.1], d=.1) + Animation(size_lock=round.size_lock_default, d=.1)
-        anim.start(round)
 
-    # def on_touch_down(self, touch):
-    #     print([WINDOW.width / touch.pos[0], WINDOW.height / touch.pos[1]])
 
 
 #######################################################

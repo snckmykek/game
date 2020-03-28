@@ -3,13 +3,15 @@ from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
+from kivy.uix.boxlayout import BoxLayout
 from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 from kivy.clock import Clock
 from global_variables import WINDOW
 from sqlite_requests import db
-from kivy.uix.boxlayout import BoxLayout
 from store import store
+from cubes_game.animatoins import do_animation
+
 
 from dialog.main import dialog
 
@@ -78,7 +80,7 @@ class CubesGame(ModalView):
         self.store.open()
 
     def on_pre_dismiss(self):
-        self.world_map.open_location(next_location='this')
+        self.world_map.open_location(self.current_location)
 
     def on_dismiss(self):
         pass
@@ -199,9 +201,7 @@ class CubesGame(ModalView):
         for cube in set(suicidal_cubes):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
-            animation = Animation(size=(10, 10), d=0.15) + Animation(size=(self.a, self.a), d=0.1)
-            animation.bind(on_complete=self.change_color)
-            animation.start(cube)
+            do_animation('decrease', cube, self.cube_colors[random.randint(0, self.colors - 1)])
 
         copy_background_objects = self.background_objects.copy()
         for background_obj in copy_background_objects:
@@ -267,9 +267,6 @@ class CubesGame(ModalView):
     def update_status_board(self):
         self.score_label.text = str(self.score)
         self.swipes_label.text = str(self.swipes)
-
-    def change_color(self, animation, instance):
-        instance.background_color = self.cube_colors[random.randint(0, self.colors - 1)]
 
     def movement(self, instance, touch):
         if self.touch_blocked or not self.touch_is_down:
@@ -344,9 +341,7 @@ class CubesGame(ModalView):
         for cube in set(suicidal_cubes):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
-            animation = Animation(size=(10, 10), d=0.15) + Animation(size=(self.a, self.a), d=0.1)
-            animation.bind(on_complete=self.change_color)
-            animation.start(cube)
+            do_animation('explosion', cube, self.cube_colors[random.randint(0, self.colors - 1)])
         Clock.schedule_once(self.boom, .6)
 
         return True
@@ -377,39 +372,10 @@ class CubesGame(ModalView):
                 button.column = j
                 self.objects.append(button)
 
-        # coordinates_background_objects = [[(0, 0), (1, 0)],
-        #                                   [(0, 1), (1, 1)]
-        #                                   ]
-        # self.background_objects = list()
-        # for i, row in enumerate(coordinates_background_objects):
-        #     for j, coords in enumerate(row):
-        #         button = Cube(size_hint=(None, None), size=(self.a, self.a),
-        #                       pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))))
-        #         button.line = i
-        #         button.column = j
-        #         button.background_normal = ''
-        #         button.background_color = (.82, .93, .51, 1)
-        #         self.background_objects.append(button)
-        #
-        # self.prizes = list()
-        # button = Cube(size_hint=(None, None), size=(self.a*2, self.a*2), pos=(0, 0))
-        # button.column = [0, 1]
-        # button.line = [0, 1]
-        # self.prizes.append(button)
-        #
         self.playing_field.clear_widgets()
-        # for obj in self.prizes:
-        #     self.playing_field.add_widget(obj)
-        # for obj in self.background_objects:
-        #     self.playing_field.add_widget(obj)
+
         for obj in self.objects:
             self.playing_field.add_widget(obj)
-
-        # Сделать так, чтобы при старте уже не было 3 в ряд не взорвавшихся
-        # Не работает, тк в буме есть отложенные события. Потом сделать кек
-        # self.boom()
-        # self.score = 0
-        # self.update_status_board()
 
 
 class GameEnding(ModalView):
@@ -641,4 +607,3 @@ class CharacterLevelInfo(ModalView):
 
         self.ids.character_level.text = 'Уровень: ' + str(level)
         self.ids.exp.text = 'Опыт: ' + str(current_exp) + ' из ' + str(exp_for_next_level)
-
