@@ -5,6 +5,7 @@ class SingleRound:
         self.name = '0'
         self.cols = 5
         self.rows = 5
+        self.time = -1
         self.swipes = 20
         self.colors = 4
         self.text_round = ''
@@ -19,6 +20,7 @@ zero_round.name = '0'
 zero_round.swipes = 10
 zero_round.colors = 3
 zero_round.text_round = ''
+zero_round.time = 10
 
 # First round
 first_round = SingleRound()

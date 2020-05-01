@@ -142,7 +142,7 @@ class WorldMap(ModalView):
         self.dialog.location = self.current_location.name
         self.dialog.level = '-1'
 
-        if self.dialog.dialog_is_completed():
+        if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == ('', ''):
             return
 
         self.dialog.open()
@@ -238,7 +238,7 @@ class WorldMap(ModalView):
         self.cubes_game.round_swipes = current_round.swipes  # Этот раунд - типо уровень. А выше round - это кнопка уровня:)
         self.cubes_game.start_game(current_round.cols if current_round.cols <= 10 else 5,
                                    current_round.rows if current_round.rows <= 10 else 5,
-                                   current_round.swipes, colors=current_round.colors)
+                                   current_round.swipes, colors=current_round.colors, time=current_round.time)
 
         self.cubes_game.open()
 

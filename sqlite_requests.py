@@ -261,6 +261,10 @@ class Database(object):
         self.cur.execute('SELECT crystal_fragments_cost FROM characters_skills WHERE skill = "{}"'.format(skill_name))
         return self.cur.fetchall()[0][0]
 
+    def get_scores_for_stars(self, location, level):
+        self.cur.execute('SELECT scores FROM levels WHERE location = "{}" AND level = "{}"'.format(location, level))
+        return [x[0] for x in self.cur.fetchall()]
+
     def set_crystal_fragments(self, crystal_fragments):
         self.cur.execute(
             'UPDATE global SET value = value + "{}" WHERE key = "crystal_fragments"'.format(crystal_fragments))

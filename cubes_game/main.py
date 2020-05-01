@@ -6,6 +6,7 @@ from kivy.uix.modalview import ModalView
 from kivy.uix.boxlayout import BoxLayout
 from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
+from kivy.properties import NumericProperty
 from kivy.clock import Clock
 from global_variables import WINDOW
 from sqlite_requests import db
@@ -22,6 +23,8 @@ Builder.load_file(r'cubes_game/main.kv')
 
 
 class CubesGame(ModalView):
+
+    time: NumericProperty(0.0)
 
     def __init__(self, **kwargs):
         super(CubesGame, self).__init__(**kwargs)
@@ -47,9 +50,11 @@ class CubesGame(ModalView):
         self.update_status_board()
         self.playing_field = self.ids.playing_field
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
-        self.cube_pattern = 'images/pattern.png'
+        self.cube_pattern = 'images/patterns/square'
         self.ids.character.skills = self.ids.skills
         self.ids.character.cubes_game = self
+        self.scores_for_stars = list()
+        self.game_is_active = False
 
         self.objects = list()
         self.background_objects = list()
@@ -63,15 +68,29 @@ class CubesGame(ModalView):
         self.touch_is_down = False
         self.forced_up = False
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
+        self.combo = 0
+
+    def go_clock(self, dt):
+        if self.current_round.time == -1:  # Если игра не на время
+            return
+
+        if self.game_is_active:
+            self.time -= dt
+            if self.time <= 0:
+                self.time = 0
+                self.end_game()
+                return
+        Clock.schedule_once(self.go_clock, 0.01)
 
     def on_open(self):
+        Clock.schedule_once(self.go_clock, 0.01)
         self.open_dialog()
 
     def open_dialog(self):
         self.dialog.location = self.current_location.name
         self.dialog.level = self.current_round.name
 
-        if self.dialog.dialog_is_completed():
+        if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == 'stub' or self.dialog.current_npc_speech == ('', ''):
             return
 
         self.dialog.open()
@@ -169,6 +188,9 @@ class CubesGame(ModalView):
 
     def boom(self, instance=None, *l):
 
+        self.combo += 1
+        self.game_is_active = True
+
         suicidal_cubes = list()
 
         for obj in self.objects:
@@ -198,6 +220,10 @@ class CubesGame(ModalView):
                     suicidal_cubes.extend([obj, obj_prev_y, obj_next_y])
 
         self.touch_blocked = True
+
+        if self.combo > 1 and set(suicidal_cubes):
+            do_animation('combo', self.ids.combo)
+
         for cube in set(suicidal_cubes):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
@@ -230,13 +256,14 @@ class CubesGame(ModalView):
         if set(suicidal_cubes):
             Clock.schedule_once(self.boom, .6)
         else:
+            self.combo = 0
             self.touch_blocked = False
             if self.swipes <= 0:
                 Clock.schedule_once(self.end_game, .3)
 
         for boosted_cube in self.get_boosted_cube(set(suicidal_cubes)):
             if boosted_cube.text != '':
-                if int(boosted_cube.text) == 5:
+                if int(boosted_cube.text) == 3:
                     continue
                 boosted_cube.text = str(int(boosted_cube.text) + 1)
             else:
@@ -267,6 +294,7 @@ class CubesGame(ModalView):
     def update_status_board(self):
         self.score_label.text = str(self.score)
         self.swipes_label.text = str(self.swipes)
+        self.ids.progress.value = self.score
 
     def movement(self, instance, touch):
         if self.touch_blocked or not self.touch_is_down:
@@ -346,11 +374,16 @@ class CubesGame(ModalView):
 
         return True
 
-    def start_game(self, cols=5, rows=5, swipes=20, cubes=None, colors=4):
+    def start_game(self, cols=5, rows=5, swipes=20, cubes=None, colors=4, time=10):
+        self.game_is_active = False
         self.cols = cols
         self.rows = rows
         self.swipes = swipes
         self.colors = colors
+        self.time = time
+        self.scores_for_stars = db.get_scores_for_stars(self.current_location.name, self.current_round.name)
+        self.ids.progress.max = max(self.scores_for_stars)
+        self.ids.max_score_label.text = str(self.ids.progress.max)
         self.a = WINDOW.width / ((self.cols if self.cols >= self.rows else self.rows) + 1)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         if cubes:
@@ -366,8 +399,9 @@ class CubesGame(ModalView):
                               pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
                 button.background_color = self.cube_colors[random.randint(0, self.colors - 1)]
-                button.background_normal = self.cube_pattern
-                button.background_down = self.cube_pattern
+                button.pattern = self.cube_pattern
+                button.background_down = button.pattern + (button.text if button.text != '' else '0') + '.png'
+                button.background_normal = button.pattern + (button.text if button.text != '' else '0') + '.png'
                 button.line = i
                 button.column = j
                 self.objects.append(button)
@@ -383,7 +417,7 @@ class GameEnding(ModalView):
     def __init__(self, **kwargs):
         super(GameEnding, self).__init__(**kwargs)
 
-        self.score = 500
+        self.score = 0
         self.game = ObjectProperty
         self.auto_dismiss = False
         self.real_prize = {}
@@ -419,7 +453,8 @@ class GameEnding(ModalView):
         self.game.start_game(cols=self.game.cols,
                              rows=self.game.rows,
                              swipes=self.game.round_swipes,
-                             colors=self.game.colors)
+                             colors=self.game.colors,
+                             time=self.game.current_round.time)
         self.dismiss()
 
     def exit_level(self):
@@ -445,6 +480,10 @@ class Cube(Button):
 
         self.column = 0
         self.line = 0
+
+    def change_pattern(self):
+        self.background_down = self.pattern + (self.text if self.text != '' else '0') + '.png'
+        self.background_normal = self.pattern + (self.text if self.text != '' else '0') + '.png'
 
 
 class StartingPoint(Label):

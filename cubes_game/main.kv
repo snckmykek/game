@@ -1,4 +1,5 @@
 <CubesGame>:
+    time: 15
     BoxLayout:
         orientation: 'vertical'
         BoxLayout:
@@ -37,21 +38,107 @@
 
             BoxLayout:
                 RelativeLayout:
+                    id: info_box
                     size_hint_x: .65
                     BoxLayout:
-                        padding: (WINDOW.width/40, WINDOW.width/40)
-                        Label:
-                            text: 'Score: '
-                            color: (1, .5, 0, 1)
-                        Label:
-                            id: score_label
-                            color: (1, .5, 0, 1)
-                        Label:
-                            text: 'Swipe: '
-                            color: (1, .5, 0, 1)
-                        Label:
-                            id: swipes_label
-                            color: (1, .5, 0, 1)
+                        orientation: 'vertical'
+                        BoxLayout:
+                            size_hint_y: .25
+                            orientation: 'vertical'
+                            BoxLayout:
+                                orientation: 'vertical'
+                                padding: (WINDOW.width/40, WINDOW.width/40)
+                                BoxLayout:
+                                    Label:
+                                        id: score_label
+                                        color: (1, .5, 0, 1)
+                                        text_size: self.size
+                                        halign: 'right'
+                                        valign: 'middle'
+                                    Label:
+                                        size_hint_x: .2
+                                        text: '/'
+                                        color: (1, .5, 0, 1)
+                                    Label:
+                                        id: max_score_label
+                                        color: (1, .5, 0, 1)
+                                        text_size: self.size
+                                        halign: 'left'
+                                        valign: 'middle'
+                                ProgressBar:
+                                    id: progress
+                        GridLayout:
+                            cols: 2
+                            size_hint_y: .75
+                            spacing: 5
+                            padding: 5
+                            canvas.before:
+                                Color:
+                                    rgba: (.3, .3, .3, .2)
+                                Rectangle:
+                                    size: self.size
+                                    pos: self.pos
+                            BoxLayout:
+                                Button:
+                                    size_hint_x: None
+                                    width: self.height
+                                    background_normal: 'images/swipe.png'
+                                    background_color: (1, 1, 1, 1)
+                                    border: (0, 0, 0, 0)
+                                Button:
+                                    id: swipes_label
+                                    background_normal: ''
+                                    background_color: (0, 0, 0, 0)
+                                    text: '15'
+                                    color: (1, .5, 0, 1)
+                            BoxLayout:
+                                Button:
+                                    size_hint_x: None
+                                    width: self.height
+                                    background_normal: 'images/task.png'
+                                    background_color: (1, 0, 0, 1)
+                                    border: (0, 0, 0, 0)
+                                Button:
+                                    background_normal: ''
+                                    background_color: (0, 0, 0, 0)
+                                    id: task_label
+                                    text: '15'
+                                    color: (1, .5, 0, 1)
+                            BoxLayout:
+                                Button:
+                                    size_hint_x: None
+                                    width: self.height
+                                    background_normal: 'images/clock.png'
+                                    background_color: (1, 1, 1, 1)
+                                    border: (0, 0, 0, 0)
+                                Button:
+                                    id: time_label
+                                    background_normal: ''  if root.time != -1 else 'images/time_infinitely.png'
+                                    background_color: (0, 0, 0, 0) if root.time != -1 else (1, 1, 1, 1)
+                                    border: (0, 0, 0, 0)
+                                    text: str(format(root.time, '.2f')) if root.time != -1 else ''
+                                    color: (1, .5, 0, 1)
+                            BoxLayout:
+                                Button:
+                                    size_hint_x: None
+                                    width: self.height
+                                    background_normal: 'images/task.png'
+                                    background_color: (0, 1, 0, 1)
+                                    border: (0, 0, 0, 0)
+                                Button:
+                                    background_normal: ''
+                                    background_color: (0, 0, 0, 0)
+                                    id: mega_task_label
+                                    text: '40'
+                                    color: (1, .5, 0, 1)
+
+
+                    Image:
+                        id: combo
+                        size_hint: None, None
+                        size: info_box.size
+                        source: 'images/combo/combo22.png'
+                        color: (1, 1, 1, 0)
                 RelativeLayout:
                     size_hint_x: .35
                     Character:
@@ -61,7 +148,6 @@
                         size_hint: None, None
                         size: WINDOW.width / 15, WINDOW.width / 15
                         on_press: self.open_character_level_info(character.name)
-                    ProgressBar:
 
 
         BoxLayout:
@@ -214,6 +300,13 @@
 
 <Cube>:
     border: (0, 0, 0, 0)
+#    color: (0, 0, 0, 0)
+    pattern: 'images/patterns/square'
+    background_down: self.pattern + self.text if self.text != '' else '0' + '.png'
+    background_normal: self.pattern + self.text if self.text != '' else '0' + '.png'
+    on_pattern: self.change_pattern()
+    on_text: self.change_pattern()
+
 
 <CharacterLevelButton>:
     background_color: (0, 0, 0, 0)
