@@ -1,0 +1,43 @@
+<TreasureChest>:
+    GridLayout:
+        cols: 1
+        spacing: 5
+        BoxLayout:
+            size_hint_y: .15
+            Label:
+                text: 'Click on the chest to open'
+        BoxLayout:
+            size_hint_y: .70
+            RelativeLayout:
+                Button:
+                    id: chest
+                    size_hint: None, None
+                    width: root.width/2
+                    height: root.height/6
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.3}
+                    background_normal: 'images/treasure_chest/closed_chest.png'
+                    on_release: root.open_chest()
+                Card:
+                    id: card_1
+                    on_release: root.open_card(self)
+                Card:
+                    id: card_2
+                    on_release: root.open_card(self)
+                Card:
+                    id: card_3
+                    on_release: root.open_card(self)
+        BoxLayout:
+            size_hint_y: .15
+            Button:
+                text: 'close'
+                on_release: root.dismiss()
+
+
+<Card@Button>:
+    size_hint: None, None
+    width: 0
+    height: 0
+    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+    background_normal: 'images/treasure_chest/card0.png'
+    background_color: (1, 1, 1, 0)
+    border: [0, 0, 0, 0]
