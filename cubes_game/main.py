@@ -186,7 +186,7 @@ class CubesGame(ModalView):
                 but.line = math.ceil(but.pos[1] / but.height) if is_rounding_up else math.floor(but.pos[1] / but.height)
                 animation.animated_properties['pos'] = (but.pos[0], but.line * but.height)
                 animation.start(but)
-        Clock.schedule_once(self.boom, .2)
+        Clock.schedule_once(self.boom, .25)
 
     def boom(self, instance=None, *l):
 
@@ -259,7 +259,7 @@ class CubesGame(ModalView):
                 animation.start(prize)
 
         if set(suicidal_cubes):
-            Clock.schedule_once(self.boom, .6)
+            Clock.schedule_once(self.boom, .8)
         else:
             self.combo = 0
             self.touch_blocked = False
