@@ -13,7 +13,6 @@ from sqlite_requests import db
 from store import store
 from cubes_game.animatoins import do_animation
 
-
 from dialog.main import dialog
 
 import math
@@ -23,8 +22,9 @@ Builder.load_file(r'cubes_game/main.kv')
 
 
 class CubesGame(ModalView):
-
     time: NumericProperty(0.0)
+    task_counter: NumericProperty(0)
+    mega_task_counter: NumericProperty(0)
 
     def __init__(self, **kwargs):
         super(CubesGame, self).__init__(**kwargs)
@@ -42,6 +42,8 @@ class CubesGame(ModalView):
         self.round_swipes = 20  # Это число не меняется в процессе игры (только при запуске) и при перезапуске используется
         self.colors = 4  # Цветов в раунде
         self.cube_colors = [(1, 0, 0, 1), (0, 1, 0, 1), (.3, .88, .9, 1), (.8, 0, .87, 1), (.9, .5, 0, 1)]
+        self.task_name = 'break_stone_color'  # 'get_prize', 'break_stone'
+        self.mega_task_name = 'combo'
 
         self.a = WINDOW.width / (self.cols + 1)
         self.score = 0
@@ -69,6 +71,7 @@ class CubesGame(ModalView):
         self.forced_up = False
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
         self.combo = 0
+        self.statistics = dict()
 
     def go_clock(self, dt):
         if self.current_round.time == -1:  # Если игра не на время
@@ -83,14 +86,14 @@ class CubesGame(ModalView):
         Clock.schedule_once(self.go_clock, 0.01)
 
     def on_open(self):
-        Clock.schedule_once(self.go_clock, 0.01)
         self.open_dialog()
 
     def open_dialog(self):
         self.dialog.location = self.current_location.name
-        self.dialog.level = self.current_round.name
+        self.dialog.level = self.current_round.number
 
-        if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == 'stub' or self.dialog.current_npc_speech == ('', ''):
+        if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == 'stub' or self.dialog.current_npc_speech == (
+                '', ''):
             return
 
         self.dialog.open()
@@ -106,7 +109,6 @@ class CubesGame(ModalView):
         # self.open_dialog()
 
     def end_game(self, *l):
-        self.ge.score = self.score
         self.ge.game = self
         self.ge.open()
 
@@ -222,9 +224,12 @@ class CubesGame(ModalView):
         self.touch_blocked = True
 
         if self.combo > 1 and set(suicidal_cubes):
+            self.statistics['combo'] += 1
             do_animation('combo', self.ids.combo)
 
         for cube in set(suicidal_cubes):
+            self.statistics[tuple(cube.background_color)] += 1
+
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
             do_animation('decrease', cube, self.cube_colors[random.randint(0, self.colors - 1)])
@@ -295,6 +300,25 @@ class CubesGame(ModalView):
         self.score_label.text = str(self.score)
         self.swipes_label.text = str(self.swipes)
         self.ids.progress.value = self.score
+
+        try:
+            if self.task_name == 'break_stone_color':
+                self.task_counter = self.current_round.task_counter - self.statistics[tuple(self.ids.task_label.background_color)]
+
+            if self.mega_task_name == 'break_stone_color':
+                self.mega_task_counter = self.current_round.mega_task_counter \
+                                      - self.statistics[tuple(self.ids.mega_task_label.background_color)]
+            elif self.mega_task_name == 'combo':
+                self.mega_task_counter = self.current_round.mega_task_counter - self.statistics['combo']
+
+        except AttributeError:
+            pass
+
+        if self.task_counter < 0:
+            self.task_counter = 0
+
+        if self.mega_task_counter < 0:
+            self.mega_task_counter = 0
 
     def movement(self, instance, touch):
         if self.touch_blocked or not self.touch_is_down:
@@ -374,20 +398,46 @@ class CubesGame(ModalView):
 
         return True
 
-    def start_game(self, cols=5, rows=5, swipes=20, cubes=None, colors=4, time=10):
+    def start_game(self, cubes=None):
         self.game_is_active = False
-        self.cols = cols
-        self.rows = rows
-        self.swipes = swipes
-        self.colors = colors
-        self.time = time
-        self.scores_for_stars = db.get_scores_for_stars(self.current_location.name, self.current_round.name)
+        self.cols = self.current_round.cols
+        self.rows = self.current_round.rows
+        self.swipes = self.current_round.swipes
+        self.colors = self.current_round.colors
+        self.time = self.current_round.time
+        self.task_counter = self.current_round.task_counter
+        self.mega_task_counter = self.current_round.mega_task_counter
+        self.task_name = self.current_round.task_name
+        self.mega_task_name = self.current_round.mega_task_name
+        self.scores_for_stars = db.get_scores_for_stars(self.current_location.name, self.current_round.number)
         self.ids.progress.max = max(self.scores_for_stars)
         self.ids.max_score_label.text = str(self.ids.progress.max)
+        self.ids.task_label.background_normal = self.current_round.task_image
+        self.ids.mega_task_label.background_normal = self.current_round.mega_task_image
         self.a = WINDOW.width / ((self.cols if self.cols >= self.rows else self.rows) + 1)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         if cubes:
-            pass  # stub
+            pass  # stub Прошло 4 месяца и я не ебу зачем эта заглушка долбоеб почему бы не пояснить было тогда??))))00
+
+        if self.task_name == 'break_stone_color':
+            self.ids.task_label.background_color = self.cube_colors[random.randint(0, self.colors - 1)]
+        else:
+            self.ids.task_label.background_color = (1, 1, 1, 0)
+
+        if self.mega_task_name == 'break_stone_color':
+            self.ids.mega_task_label.background_color = self.cube_colors[random.randint(0, self.colors - 1)]
+        elif self.mega_task_name == 'combo':
+            self.ids.mega_task_label.background_color = (1, 1, 1, 1)
+        else:
+            self.ids.task_label.background_color = (1, 1, 1, 0)
+
+        self.statistics.clear()
+        self.statistics.update({'combo': 0})
+        for color in self.cube_colors:
+            self.statistics.update({color: 0})
+        for prize in self.prizes:
+            self.statistics.update({prize: 0})
+
         self.score = 0
         self.update_status_board()
 
@@ -411,6 +461,22 @@ class CubesGame(ModalView):
         for obj in self.objects:
             self.playing_field.add_widget(obj)
 
+        character = db.get_current_character()
+        self.ids.character_level.text = str(character[3])
+        self.ids.character.skills.clear_widgets()
+        for skill in db.get_skills(character[0]):
+            sk_box = SkillBox()
+            sk = sk_box.ids.skill
+            sk.name = skill[1]
+            sk.background_normal = skill[2]
+            sk.skill_level = skill[3]
+            sk.quantity = skill[4]
+            sk.is_unblock = skill[5]
+            sk_box.ids.quantity.text = str(sk.quantity)
+            self.ids.character.skills.add_widget(sk_box)
+
+        Clock.schedule_once(self.go_clock, 0.01)
+
 
 class GameEnding(ModalView):
 
@@ -418,12 +484,21 @@ class GameEnding(ModalView):
         super(GameEnding, self).__init__(**kwargs)
 
         self.score = 0
+        self.task_is_completed = False
+        self.mega_task_is_completed = False
         self.game = ObjectProperty
         self.auto_dismiss = False
         self.real_prize = {}
         self.current_result = []
 
     def on_pre_open(self):
+        self.score = self.game.score
+        self.task_is_completed = (self.game.task_counter == 0)
+        self.mega_task_is_completed = (self.game.mega_task_counter == 0)
+
+        if not self.task_is_completed:
+            self.score = 0
+
         self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
         self.real_prize = self.get_real_prize()
         self.ids.stars.text = 'Stars: ' + str(self.real_prize['stars'])
@@ -431,30 +506,28 @@ class GameEnding(ModalView):
         self.ids.crystal_fragments.text = str(self.real_prize['crystal_fragments'])
 
     def get_real_prize(self):
-        self.current_result = db.get_current_result(self.game.current_location.name, self.game.current_round.name,
-                                                    self.score)
+        self.current_result = list(db.get_current_result(self.game.current_location.name, self.game.current_round.number,
+                                                    self.score))
         self.up_current_result_by_bonuses(self.current_result)
-        past_result = db.get_past_result(self.game.current_location.name, self.game.current_round.name)
+        past_result = db.get_past_result(self.game.current_location.name, self.game.current_round.number)
 
-        real_prize = {'stars': self.current_result[0],
-                      'exp': self.current_result[1] - past_result[1] if self.current_result[1] > past_result[1] else 0,
-                      'crystal_fragments': self.current_result[2] - past_result[2] if self.current_result[2] >
-                                                                                      past_result[2] else 0
-                      }
+        real_prize = {
+            'stars': self.current_result[0],
+            'stars_difference': (self.current_result[0] - past_result[0]) if self.current_result[0] > past_result[0] else 0,
+            'exp': (self.current_result[1] - past_result[1]) if self.current_result[1] > past_result[1] else 0,
+            'crystal_fragments': (self.current_result[2] - past_result[2]) if self.current_result[2] > past_result[2] else 0
+            }
 
         return real_prize
 
     def up_current_result_by_bonuses(self, current_result):
-        pass
+        if self.mega_task_is_completed:  # Добавляет звезду за выполненое доп задание
+            current_result[0] += 1
 
     def play_again(self):
         self.save_result()
 
-        self.game.start_game(cols=self.game.cols,
-                             rows=self.game.rows,
-                             swipes=self.game.round_swipes,
-                             colors=self.game.colors,
-                             time=self.game.current_round.time)
+        self.game.start_game()
         self.dismiss()
 
     def exit_level(self):
@@ -464,13 +537,16 @@ class GameEnding(ModalView):
         self.game.dismiss()
 
     def save_result(self):
-        db.set_completed_level(self.game.current_location.name, self.game.current_round.name)
+        db.set_completed_level(self.game.current_location.name, self.game.current_round.number)
         if (self.real_prize['exp'] != 0) or (self.real_prize['crystal_fragments'] != 0):
-            db.set_current_result(self.game.current_location.name, self.game.current_round.name,
+            db.set_current_result(self.game.current_location.name, self.game.current_round.number,
                                   self.current_result[1], self.current_result[2], self.current_result[0])
 
             db.set_characters_exp(self.ids.character.name, self.real_prize['exp'])
             db.set_crystal_fragments(self.real_prize['crystal_fragments'])
+        elif self.real_prize['stars_difference'] != 0:
+            db.set_current_result(self.game.current_location.name, self.game.current_round.number,
+                                  self.current_result[1], self.current_result[2], self.current_result[0])
 
 
 class Cube(Button):

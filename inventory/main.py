@@ -8,80 +8,107 @@ from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 from kivy.properties import NumericProperty
 from kivy.clock import Clock
-from global_variables import WINDOW
+from global_variables import WINDOW, FIRSTSHARDS
+from sqlite_requests import db
+from treasure_chest.main import TreasureChest
 import random
 
-Builder.load_file(r'treasure_chest/main.kv')
+Builder.load_file(r'inventory/main.kv')
 
 
-class TreasureChest(ModalView):
+def get_qty_shards(qty=0):
+    item_max_qty = FIRSTSHARDS
+
+    item_level = 0
+    item_qty = 0
+
+    for i in range(qty):
+        item_qty += 1
+        if item_qty == item_max_qty:
+            item_level += 1
+            item_max_qty *= 2
+
+    return {'item_level': item_level, 'item_qty': item_qty, 'item_max_qty': item_max_qty}
+
+
+class Inventory(ModalView):
 
     def __init__(self, **kwargs):
-        super(TreasureChest, self).__init__(**kwargs)
+        super(Inventory, self).__init__(**kwargs)
 
-        self.chest_is_open = False
-        self.card_is_open = False
-        self.additional_card_is_open = False
-        self.additional_card_is_activate = False
-
-        items = [('crystal_fragments', 25),
-                 ('crystal', 1),
-                 ('crystal_fragments', 5),
-                 ('crystal_fragments', 5),
-                 ('crystal_fragments', 5),
-                 ('crystal_fragments', 5),
-                 ('crystal_fragments', 5),
-                 ('crystal_fragments', 5)
-                 ]
-        random.choices(['Катя', 'Коля'], weights=[10, 20])
+        self.inventory_box = self.ids.inventory_box
+        self.treasure_chest = TreasureChest()
 
     def on_pre_open(self):
-        self.ids.chest.background_normal = 'images/treasure_chest/closed_chest.png'
-        for card in [self.ids.card_1, self.ids.card_2, self.ids.card_3]:
-            card.background_normal = 'images/treasure_chest/card0.png'
-            card.background_color = (1, 1, 1, 0)
-            card.size = [0, 0]
-            card.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
+        self.refresh_inventory()
 
-        self.chest_is_open = False
-        self.card_is_open = False
-        self.additional_card_is_open = False
-        self.additional_card_is_activate = False
+    def open_treasure_chest(self):
+        self.treasure_chest.owner = self
+        self.treasure_chest.open()
 
-    def open_chest(self):
-        if self.chest_is_open:
-            return
+    def refresh_inventory(self):
 
-        self.ids.chest.background_normal = 'images/treasure_chest/opened_chest.png'
+        resources = db.get_resources()
 
-        for card in [self.ids.card_1, self.ids.card_2, self.ids.card_3]:
-            if card == self.ids.card_1:
-                pos = {'center_x': 3 / 16, 'center_y': 0.7}
-            elif card == self.ids.card_2:
-                pos = {'center_x': 0.5, 'center_y': 0.7}
-            elif card == self.ids.card_3:
-                pos = {'center_x': 13 / 16, 'center_y': 0.7}
-            else:
-                pos = {'center_x': 0.5, 'center_y': 0.7}
-            anim = Animation(width=self.width / 4, height=self.height / 4, background_color=(1, 1, 1, 1), pos_hint=pos,
-                             d=1.5)
+        self.ids.crystal.text = str(resources[0])
+        self.ids.crystal_fragments.text = str(resources[1])
 
-            anim.start(card)
+        self.inventory_box.clear_widgets()
+        for item in db.get_items():
+            item_id = item[0]
+            name = item[1]
+            description = item[2]
+            quantity = item[3]
+            image = item[4]
 
-    def open_card(self, card):
-        if self.card_is_open and (self.additional_card_is_open or not self.additional_card_is_activate):
-            return
+            if item_id[:5] == 'chest':  # Сундуки в отдельном поле находятся
+                self.ids.chest_qty.text = str(quantity)
+                self.ids.chest_qty_image.background_normal = str(image)
+                self.ids.chest_qty_image.background_down = str(image)
+                continue
 
-        self.additional_card_is_open = self.card_is_open  # В первый раз обе Ложь, во второй раз card_is_open Истина,
-        self.card_is_open = True  # в третий раз сразу возврат
+            itembox = ItemBox()
+            # itembox.height = WINDOW.height / 10
+            itembox.item_id = item_id
+            itembox.description = description
+            itembox.quantity = quantity
 
-        anim = Animation(width=card.width * (6 / 5), height=card.height * (6 / 5), t='in_out_expo', d=.2) \
-            + Animation(width=0, t='linear', d=.3)
-        anim.bind(on_complete=lambda anim, card: self.open_card2(card))
-        anim.start(card)
+            itembox.ids.item_button.name = name
+            itembox.ids.item_button.item_id = item_id
+            itembox.ids.item_button.description = description
+            itembox.ids.item_button.image = image
+            itembox.ids.item_button.background_normal = image
+            itembox.ids.item_button.background_down = image
 
-    def open_card2(self, card):
-        card.background_normal = 'images/treasure_chest/card1.png'
-        anim = Animation(width=self.width / 4 * (6 / 5), t='linear', d=.3) \
-            + Animation(width=self.width / 4, height=self.height / 4, t='in_expo', d=.2)
-        anim.start(card)
+            dict_qty = get_qty_shards(itembox.quantity)
+            itembox.ids.item_level.text = str(dict_qty['item_level'])
+            itembox.ids.item_qty.text = str(dict_qty['item_qty'])
+            itembox.ids.item_max_qty.text = str(dict_qty['item_max_qty'])
+
+            self.inventory_box.add_widget(itembox)
+
+
+class ItemBox(BoxLayout):
+    item_id: str
+    description: str
+    quantity: int
+
+    def __init__(self, **kwargs):
+        super(ItemBox, self).__init__(**kwargs)
+
+        self.height = WINDOW.height / 10
+
+
+class Item(Button):
+    name: str
+    item_id: str
+    description: str
+    image: str
+
+    def __init__(self, **kwargs):
+        super(Item, self).__init__(**kwargs)
+
+        self.image = ''
+
+        self.background_normal = self.image
+        self.background_down = self.image

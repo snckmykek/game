@@ -1,43 +1,144 @@
-<TreasureChest>:
-    GridLayout:
-        cols: 1
-        spacing: 5
+#:import WINDOW global_variables.WINDOW
+
+<Inventory>:
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 15
+        spacing: 15
         BoxLayout:
-            size_hint_y: .15
+            size_hint_y: .1
+            spacing: 20
+            padding: 5
+            canvas.before:
+                Color:
+                    rgba: (1, 1, 1, .2)
+                Rectangle:
+                    source: 'images/items/fon.png'
+                    size: self.size
+                    pos: self.pos
             Label:
-                text: 'Click on the chest to open'
+                id: crystal_fragments
+                text: '1568'
+                canvas:
+                    Color:
+                        rgba: (1, 1, 1, 1)
+                    Rectangle:
+                        source: 'images/items/crystal_fragments.png'
+                        size: [self.height, self.height]
+                        pos: self.pos
+            Label
+                id: crystal
+                text: '42'
+                canvas:
+                    Color:
+                        rgba: (1, 1, 1, 1)
+                    Rectangle:
+                        source: 'images/items/crystal.png'
+                        size: [self.height, self.height]
+                        pos: self.pos
         BoxLayout:
-            size_hint_y: .70
+            size_hint_y: None
+            height: WINDOW.height/10
+            canvas.before:
+                Color:
+                    rgba: (1, 1, 1, .2)
+                Rectangle:
+                    source: 'images/items/fon.jpg'
+                    size: self.size
+                    pos: self.pos
             RelativeLayout:
+                BoxLayout:
+                    size_hint_x: .4
+                    padding: 5
+                    Button:
+                        id: chest_qty_image
+                        size_hint_x: None
+                        width: self.height
+                        border: [0, 0, 0, 0]
+                        background_normal: 'images/items/chest.png'
+                        background_down: 'images/items/chest.png'
+                    Label:
+                        id: chest_qty
+                        text: '0'
                 Button:
-                    id: chest
-                    size_hint: None, None
-                    width: root.width/2
-                    height: root.height/6
-                    pos_hint: {'center_x': 0.5, 'center_y': 0.3}
-                    background_normal: 'images/treasure_chest/closed_chest.png'
-                    on_release: root.open_chest()
-                Card:
-                    id: card_1
-                    on_release: root.open_card(self)
-                Card:
-                    id: card_2
-                    on_release: root.open_card(self)
-                Card:
-                    id: card_3
-                    on_release: root.open_card(self)
+                    text: 'Open the treasure chest!'
+                    text_size: [self.width*.8, self.height]
+                    halign: 'right'
+                    valign: 'middle'
+                    background_color: (1, 1, 1, 0)
+                    on_release: root.open_treasure_chest()
+        ScrollView:
+            size_hint_y: .7
+            canvas.before:
+                Color:
+                    rgba: (1, 1, 1, .2)
+                Rectangle:
+                    source: 'images/items/fon.jpg'
+                    size: self.size
+                    pos: self.pos
+#            do_scroll_x: False
+#            scroll_distance: 30
+#            scroll_timeout: 80
+            GridLayout:
+                id: inventory_box
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: 10
         BoxLayout:
-            size_hint_y: .15
+            size_hint_y: .1
             Button:
-                text: 'close'
+                text: 'Close'
                 on_release: root.dismiss()
 
+<ItemBox>:
+    item_id: ''
+    description: ''
+    size_hint_y: None
+    padding: 5
 
-<Card@Button>:
-    size_hint: None, None
-    width: 0
-    height: 0
-    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
-    background_normal: 'images/treasure_chest/card0.png'
-    background_color: (1, 1, 1, 0)
+    canvas:
+        Color:
+            rgba: (1, 1, 1, .2)
+        Rectangle:
+            source: 'images/items/fon2.jpg'
+            size: self.size
+            pos: self.pos
+
+    Item:
+        id: item_button
+        size_hint_x: None
+        width: self.height
+    Label:
+        id: item_level
+        size_hint_x: .2
+        text:
+    BoxLayout:
+        size_hint_x: .6
+        Label:
+            id: item_qty
+            size_hint_x: .5
+            text: '0'
+            text_size: self.size
+            halign: 'right'
+            valign: 'middle'
+        Label:
+            size_hint_x: None
+            size: [self.texture_size[0] + 10, self.texture_size[1] + 10]
+            text: '/'
+        Label:
+            id: item_max_qty
+            size_hint_x: .3
+            text: '10'
+            text_size: self.size
+            halign: 'left'
+            valign: 'middle'
+
+
+<Item>:
+    name: ''
+    item_id: ''
+    description: ''
+    image: ''
     border: [0, 0, 0, 0]

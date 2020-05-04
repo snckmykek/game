@@ -9,6 +9,8 @@ from sqlite_requests import db
 from dialog.main import dialog
 from kivy.animation import Animation
 import random
+from treasure_chest.main import TreasureChest
+from inventory.main import Inventory
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
@@ -29,6 +31,7 @@ class Round(Button):
         self.size_1 = [0, 0]
         self.size_2 = [0, 0]
         self.size_3 = [0, 0]
+        self.size_4 = [0, 0]
         self.size_lock = [self.width, self.height]
         self.size_lock_default = self.size_lock.copy()
 
@@ -49,6 +52,8 @@ class Round(Button):
             self.size_2 = [self.width / 3.5, self.height / 3.5]
         if qty_stars > 2:
             self.size_3 = [self.width / 3.5, self.height / 3.5]
+        if qty_stars > 3:
+            self.size_4 = [self.width / 2.5, self.height / 2.5]
 
         self.size_lock_default = self.size_lock.copy()
 
@@ -72,6 +77,8 @@ class WorldMap(ModalView):
         self.is_first_open_location = True
 
         self.cubes_game = CubesGame()
+        self.treasure_chest = TreasureChest()
+        self.inventory = Inventory()
         self.world_map = self.ids.world_map
         self.coords = tuple()
         self.locations = locations
@@ -109,8 +116,10 @@ class WorldMap(ModalView):
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
                                  on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.6])
         button.parameter = 'inventory'
+        button.text = 'inv'
         button.background_normal = 'images/maps/menu_buttons/inventory_menu_button.png'
         button.background_down = 'images/maps/menu_buttons/inventory_menu_button_down.png'
+        button.bind(on_release=self.inventory.open)
         self.menu_buttons.append(button)
 
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
@@ -132,6 +141,7 @@ class WorldMap(ModalView):
         button.parameter = 'exit'
         button.background_normal = 'images/maps/menu_buttons/exit_menu_button.png'
         button.background_down = 'images/maps/menu_buttons/exit_menu_button_down.png'
+        button.bind(on_release=self.treasure_chest.open)
         self.menu_buttons.append(button)
 
         for but in self.menu_buttons:
@@ -236,9 +246,7 @@ class WorldMap(ModalView):
         self.cubes_game.current_location = self.current_location
         self.cubes_game.current_round = current_round
         self.cubes_game.round_swipes = current_round.swipes  # Этот раунд - типо уровень. А выше round - это кнопка уровня:)
-        self.cubes_game.start_game(current_round.cols if current_round.cols <= 10 else 5,
-                                   current_round.rows if current_round.rows <= 10 else 5,
-                                   current_round.swipes, colors=current_round.colors, time=current_round.time)
+        self.cubes_game.start_game()
 
         self.cubes_game.open()
 
@@ -271,10 +279,12 @@ first_location.name = 'Первая'
 
 # Second Location
 second_location = SingleWorld()
-second_location.coords = [(WINDOW.width * 2 / 8, WINDOW.height * 2 / 5),
-                          (WINDOW.width * 2.5 / 6, WINDOW.height * 2 / 5),
-                          (WINDOW.width / 8, WINDOW.height * 2.6 / 9),
-                          (WINDOW.width * 2.5 / 6, WINDOW.height * 3 / 3.5)]
+second_location.coords = [(WINDOW.width / 2.6, WINDOW.height / 6.15), (WINDOW.width / 1.55, WINDOW.height / 5.00),
+                         (WINDOW.width / 1.19, WINDOW.height / 3.45), (WINDOW.width / 1.67, WINDOW.height / 2.93),
+                         (WINDOW.width / 2.81, WINDOW.height / 2.65), (WINDOW.width / 3.13, WINDOW.height / 1.92),
+                         (WINDOW.width / 1.57, WINDOW.height / 1.76), (WINDOW.width / 1.17, WINDOW.height / 1.55),
+                         (WINDOW.width / 1.65, WINDOW.height / 1.38), (WINDOW.width / 3.00, WINDOW.height / 1.34),
+                         (WINDOW.width / 4.16, WINDOW.height / 1.18), (WINDOW.width / 2.0, WINDOW.height / 1.13)]
 second_location.background = 'images/maps/world_map_2.png'
 second_location.round_button = Round
 second_location.name = 'Second'

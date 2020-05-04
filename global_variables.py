@@ -37,6 +37,8 @@ class LevelButton:
         self.width = Window.width / 8
         self.height = Window.height / 8
         self.size = (self.width, self.height)
+
+
 # end Level button
 
 
@@ -50,9 +52,12 @@ class CommonButton:
         self.width = Window.width / 4
         self.height = Window.height / 16
         self.size = (self.width, self.height)
+
+
 # end Common button
 
 
 WINDOW = WindowSettings()
 LEVELBUTTON = LevelButton()
 COMMONBUTTON = CommonButton()
+FIRSTSHARDS = 10

@@ -13,6 +13,9 @@ class Database(object):
         self.insert_characters_or_skills('characters')
         self.insert_levels()
         self.insert_global_info()
+        self.insert_levels_settings()
+        self.insert_items()
+        self.insert_chest()
 
     def close(self):
         self.cur.close()
@@ -72,6 +75,37 @@ class Database(object):
                          'character_level INTEGER,'
                          'exp_for_level INTEGER)')
 
+        self.cur.execute('CREATE TABLE IF NOT EXISTS levels_settings('
+                         'location TEXT,'
+                         'level TEXT,'
+                         'cols INTEGER,'
+                         'rows INTEGER,'
+                         'swipes INTEGER,'
+                         'time INTEGER,'
+                         'colors INTEGER,'
+                         'text_level TEXT,'
+                         'name TEXT,'
+                         'task_name TEXT,'
+                         'task_counter INTEGER,'
+                         'mega_task_name TEXT,'
+                         'mega_task_counter INTEGER,'
+                         'task_image TEXT,'
+                         'mega_task_image TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS inventory('
+                         'item TEXT,'
+                         'name TEXT,'
+                         'description TEXT,'
+                         'quantity INTEGER,'
+                         'image TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS chest('
+                         'chest TEXT,'
+                         'chest_image TEXT,'
+                         'item_id TEXT,'
+                         'quantity INTEGER,'
+                         'probability REAL)')
+
     def insert_global_info(self):
 
         if not self.table_is_empty('global'):
@@ -97,42 +131,265 @@ class Database(object):
         levels = [('Первая', '0', '0', '1', 3, 30, 70),
                   ('Первая', '0', '0', '2', 4, 40, 130),
                   ('Первая', '0', '0', '3', 5, 50, 180),
-                  ('Первая', '0', '0', '4', 5, 50, 300),
 
                   ('Первая', '1', '0', '1', 5, 30, 100),
                   ('Первая', '1', '0', '2', 6, 40, 150),
                   ('Первая', '1', '0', '3', 7, 50, 200),
-                  ('Первая', '1', '0', '4', 7, 50, 350),
 
                   ('Первая', '2', '0', '1', 7, 30, 80),
                   ('Первая', '2', '0', '2', 9, 50, 120),
                   ('Первая', '2', '0', '3', 11, 70, 160),
-                  ('Первая', '2', '0', '4', 11, 70, 200),
 
                   ('Первая', '3', '0', '1', 10, 30, 100),
                   ('Первая', '3', '0', '2', 12, 60, 150),
                   ('Первая', '3', '0', '3', 14, 80, 200),
-                  ('Первая', '3', '0', '4', 14, 80, 300),
 
                   ('Первая', '4', '0', '1', 10, 40, 250),
                   ('Первая', '4', '0', '2', 12, 50, 350),
                   ('Первая', '4', '0', '3', 14, 60, 450),
-                  ('Первая', '4', '0', '4', 14, 60, 600),
 
                   ('Первая', '5', '0', '1', 20, 50, 450),
                   ('Первая', '5', '0', '2', 30, 80, 500),
                   ('Первая', '5', '0', '3', 45, 120, 550),
-                  ('Первая', '5', '0', '4', 45, 120, 700),
 
                   ('Первая', '6', '0', '1', 20, 30, 250),
                   ('Первая', '6', '0', '2', 25, 60, 350),
                   ('Первая', '6', '0', '3', 30, 90, 450),
-                  ('Первая', '6', '0', '4', 30, 90, 500)
+
+                  ('Первая', '7', '0', '1', 3, 30, 70),
+                  ('Первая', '7', '0', '2', 4, 40, 130),
+                  ('Первая', '7', '0', '3', 5, 50, 180),
+
+                  ('Первая', '8', '0', '1', 5, 30, 100),
+                  ('Первая', '8', '0', '2', 6, 40, 150),
+                  ('Первая', '8', '0', '3', 7, 50, 200),
+
+                  ('Первая', '9', '0', '1', 7, 30, 80),
+                  ('Первая', '9', '0', '2', 9, 50, 120),
+                  ('Первая', '9', '0', '3', 11, 70, 160),
+
+                  ('Первая', '10', '0', '1', 10, 30, 100),
+                  ('Первая', '10', '0', '2', 12, 60, 150),
+                  ('Первая', '10', '0', '3', 14, 80, 200),
+
+                  ('Первая', '11', '0', '1', 10, 40, 250),
+                  ('Первая', '11', '0', '2', 12, 50, 350),
+                  ('Первая', '11', '0', '3', 14, 60, 450),
+
+                  ('Первая', '12', '0', '1', 20, 50, 450),
+                  ('Первая', '12', '0', '2', 30, 80, 500),
+                  ('Первая', '12', '0', '3', 45, 120, 550),
+
+                  ('Second', '0', '0', '1', 3, 30, 70),
+                  ('Second', '0', '0', '2', 4, 40, 130),
+                  ('Second', '0', '0', '3', 5, 50, 180),
+
+                  ('Second', '1', '0', '1', 5, 30, 100),
+                  ('Second', '1', '0', '2', 6, 40, 150),
+                  ('Second', '1', '0', '3', 7, 50, 200),
+
+                  ('Second', '2', '0', '1', 7, 30, 80),
+                  ('Second', '2', '0', '2', 9, 50, 120),
+                  ('Second', '2', '0', '3', 11, 70, 160),
+
+                  ('Second', '3', '0', '1', 10, 30, 100),
+                  ('Second', '3', '0', '2', 12, 60, 150),
+                  ('Second', '3', '0', '3', 14, 80, 200),
+
+                  ('Second', '4', '0', '1', 10, 40, 250),
+                  ('Second', '4', '0', '2', 12, 50, 350),
+                  ('Second', '4', '0', '3', 14, 60, 450),
+
+                  ('Second', '5', '0', '1', 20, 50, 450),
+                  ('Second', '5', '0', '2', 30, 80, 500),
+                  ('Second', '5', '0', '3', 45, 120, 550),
+
+                  ('Second', '6', '0', '1', 20, 30, 250),
+                  ('Second', '6', '0', '2', 25, 60, 350),
+                  ('Second', '6', '0', '3', 30, 90, 450),
+
+                  ('Second', '7', '0', '1', 3, 30, 70),
+                  ('Second', '7', '0', '2', 4, 40, 130),
+                  ('Second', '7', '0', '3', 5, 50, 180),
+
+                  ('Second', '8', '0', '1', 5, 30, 100),
+                  ('Second', '8', '0', '2', 6, 40, 150),
+                  ('Second', '8', '0', '3', 7, 50, 200),
+
+                  ('Second', '9', '0', '1', 7, 30, 80),
+                  ('Second', '9', '0', '2', 9, 50, 120),
+                  ('Second', '9', '0', '3', 11, 70, 160),
+
+                  ('Second', '10', '0', '1', 10, 30, 100),
+                  ('Second', '10', '0', '2', 12, 60, 150),
+                  ('Second', '10', '0', '3', 14, 80, 200),
+
+                  ('Second', '11', '0', '1', 10, 40, 250),
+                  ('Second', '11', '0', '2', 12, 50, 350),
+                  ('Second', '11', '0', '3', 14, 60, 450),
+
+                  ('Second', '12', '0', '1', 20, 50, 450),
+                  ('Second', '12', '0', '2', 30, 80, 500),
+                  ('Second', '12', '0', '3', 45, 120, 550)
                   ]
 
         for level in levels:
             request = 'INSERT INTO levels VALUES('
             for val in level:
+                request += '"{}",'.format(val)
+            request = request[:-1] + ')'
+            self.cur.execute(request)
+        self.commit()
+
+    def insert_levels_settings(self):
+
+        if not self.table_is_empty('levels_settings'):
+            return
+
+        levels_settings = \
+            [
+                ('Первая', '0', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '1', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '2', 3, 3, 20, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '3', 5, 5, 20, -1, 5, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '4', 5, 5, 5, -1, 2, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '5', 8, 8, 20, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '6', 4, 6, 30, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '7', 5, 5, 10, 60, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '8', 3, 3, 20, 100, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '9', 5, 5, 20, 100, 5, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '10', 5, 5, 5, 25, 2, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '11', 8, 8, 20, 120, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Первая', '12', 4, 6, 30, 150, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+
+                ('Second', '0', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '1', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '2', 3, 3, 20, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '3', 5, 5, 20, -1, 5, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '4', 5, 5, 5, -1, 2, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '5', 8, 8, 20, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '6', 4, 6, 30, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '7', 5, 5, 10, 60, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '8', 3, 3, 20, 100, 3, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '9', 5, 5, 20, 100, 5, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '10', 5, 5, 5, 25, 2, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '11', 8, 8, 20, 120, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
+                ('Second', '12', 4, 6, 30, 150, 4, "", "", "break_stone_color", 15, "combo", 3,
+                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png")
+            ]
+
+        for level_settings in levels_settings:
+            request = 'INSERT INTO levels_settings VALUES('
+            for val in level_settings:
+                request += '"{}",'.format(val)
+            request = request[:-1] + ')'
+            self.cur.execute(request)
+        self.commit()
+
+    def insert_items(self):
+
+        if not self.table_is_empty('inventory'):
+            return
+
+        items = \
+            [
+                ('item_0', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 56,
+                 'images/items/item_0.png'),
+                ('item_1', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 113,
+                 'images/items/item_1.png'),
+                ('item_2', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 633,
+                 'images/items/item_2.png'),
+                ('item_3', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 1,
+                 'images/items/item_3.png'),
+                ('item_4', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 96,
+                 'images/items/item_4.png'),
+                ('item_5', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 13,
+                 'images/items/item_5.png'),
+                ('item_6', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_6.png'),
+                ('item_7', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_7.png'),
+                ('item_8', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_8.png'),
+                ('item_9', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_9.png'),
+                ('item_10', 'Разноцветный амулет', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_10.png'),
+                ('item_11', 'Вероятность найти сундук', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_11.png'),
+                ('chest_1', 'Сундук с сокровищами', 'Выпадает рандом элемент', 19,
+                 'images/items/chest.png'),
+                ('item_12', 'Вероятность найти ресурсы', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_12.png'),
+                ('item_13', 'Комбо бонус', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/item_13.png'),
+                ('crystal', 'Кристаллы', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/crystal.png'),
+                ('crystal_fragments', 'Золото', 'Увеличивает количество очков за красные элементы', 0,
+                 'images/items/crystal_fragments.png')
+            ]
+
+        for item in items:
+            request = 'INSERT INTO inventory VALUES('
+            for val in item:
+                request += '"{}",'.format(val)
+            request = request[:-1] + ')'
+            self.cur.execute(request)
+        self.commit()
+
+    def insert_chest(self):
+
+        if not self.table_is_empty('chest'):
+            return
+
+        items = \
+            [
+                ('chest_1', 'images/items/chest.png', 'item_0', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_1', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_2', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_3', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_4', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_5', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_6', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_7', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_8', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_9', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_10', 1, 3),
+                ('chest_1', 'images/items/chest.png', 'item_11', 1, 0.5),
+                ('chest_1', 'images/items/chest.png', 'item_12', 1, 0.5),
+                ('chest_1', 'images/items/chest.png', 'item_13', 1, 0.5),
+                ('chest_1', 'images/items/chest.png', 'crystal', 10, 1),
+                ('chest_1', 'images/items/chest.png', 'crystal_fragments', 120, 20)
+            ]
+
+        for item in items:
+            request = 'INSERT INTO chest VALUES('
+            for val in item:
                 request += '"{}",'.format(val)
             request = request[:-1] + ')'
             self.cur.execute(request)
@@ -196,6 +453,10 @@ class Database(object):
 
         return character
 
+    def get_levels_settings(self, location=None):
+        self.cur.execute('SELECT * FROM levels_settings WHERE location = "{}"'.format(location))
+        return self.cur.fetchall()
+
     def get_current_result(self, location, level, scores):
         request = 'SELECT difficult, exp, crystal_fragments FROM levels WHERE location = "{0}" ' \
                   'AND level = "{1}" AND scores = (SELECT MAX(scores) FROM levels WHERE ' \
@@ -229,6 +490,23 @@ class Database(object):
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
+
+    def get_items(self):
+        request = 'SELECT * FROM inventory'
+        self.cur.execute(request)
+
+        return list(self.cur.fetchall())
+
+    def get_items_for_chest(self, chest='chest_1'):
+        request = 'SELECT chest.*, inventory.image FROM chest LEFT OUTER JOIN inventory ON chest.item_id' \
+                  ' = inventory.item WHERE chest.chest = "{}"'.format(chest)
+        self.cur.execute(request)
+
+        result = list(self.cur.fetchall())
+
+        items = [((x[2], x[3], x[5]), x[4]) for x in result]
+
+        return items
 
     def get_characters(self):
         request = 'SELECT * FROM characters'
@@ -273,6 +551,14 @@ class Database(object):
     def set_skill_quantity(self, skill_name, quantity):
         self.cur.execute('UPDATE characters_skills SET quantity = "{}" WHERE skill = "{}"'.format(quantity, skill_name))
         Clock.schedule_once(self.commit)
+
+    def set_items_qty_change(self, item_id, qty):
+        if (item_id == 'crystal') or (item_id == 'crystal_fragments'):
+            self.cur.execute(
+                'UPDATE global SET value = value + {} WHERE key = "{}"'.format(int(qty), item_id))
+        else:
+            self.cur.execute('UPDATE inventory SET quantity = quantity + {} WHERE item = "{}"'.format(int(qty), item_id))
+        self.commit()
 
     def set_current_character(self, character_name):
         self.cur.execute('UPDATE global SET value = "{}" WHERE key = "current_character"'.format(character_name))
