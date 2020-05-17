@@ -3,7 +3,7 @@
     auto_dismiss: False
     background: 'images/shop/shop_background.png'
     crystal: 0
-    crystal_fragments: 0
+    gold: 0
     BoxLayout:
         padding: 15
         spacing: 15
@@ -17,7 +17,7 @@
                     color: (0, 0, 0, 1)
             ShopBox:
                 Label:
-                    text: str(root.crystal_fragments)
+                    text: str(root.gold)
                     color: (0, 0, 0, 1)
         BoxLayout:
             size_hint_y: .3
@@ -31,7 +31,7 @@
                         Button:
                             background_normal: 'images/shop/exchange.png'
                             background_down: 'images/shop/exchange.png'
-                            on_press: root.give_crystal_fragments_test()
+                            on_press: root.give_gold_test()
                         Label:
                             id: exchange
                             text: 'exchange'

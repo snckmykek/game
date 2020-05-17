@@ -75,9 +75,9 @@ class WorldMap(ModalView):
 
         self.dialog = dialog
         self.is_first_open_location = True
+        self.is_treasure_hunting = True
 
         self.cubes_game = CubesGame()
-        self.treasure_chest = TreasureChest()
         self.inventory = Inventory()
         self.world_map = self.ids.world_map
         self.coords = tuple()
@@ -88,7 +88,7 @@ class WorldMap(ModalView):
 
     def add_buttons(self):
         button = ParameterButton(text='next', size_hint=(None, None), width=WINDOW.width / 5, height=WINDOW.height / 12,
-                            on_press=self.open_next_or_prev_location, pos_hint={'x': .8})
+                                 on_press=self.open_next_or_prev_location, pos_hint={'x': .8})
         button.parameter = 'next'
         self.ids.rl.add_widget(button)
 
@@ -97,8 +97,10 @@ class WorldMap(ModalView):
         button.parameter = 'prev'
         self.ids.rl.add_widget(button)
 
-        open_close_menu_button = ParameterButton(text='', size_hint=(None, None), size=[WINDOW.height / 12, WINDOW.height / 12],
-                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.77])
+        open_close_menu_button = ParameterButton(text='', size_hint=(None, None),
+                                                 size=[WINDOW.height / 12, WINDOW.height / 12],
+                                                 on_press=self.open_close_menu,
+                                                 pos=[WINDOW.width * .85, WINDOW.height * .77])
         open_close_menu_button.parameter = 'open'
         open_close_menu_button.background_normal = 'images/maps/menu_buttons/open_menu_button.png'
         open_close_menu_button.background_down = 'images/maps/menu_buttons/open_menu_button.png'
@@ -107,14 +109,14 @@ class WorldMap(ModalView):
         self.menu_buttons.clear()
 
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
-                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.7])
+                                 on_press=self.open_close_menu, pos=[WINDOW.width * .85, WINDOW.height * .7])
         button.parameter = 'teleport'
         button.background_normal = 'images/maps/menu_buttons/teleport_menu_button.png'
         button.background_down = 'images/maps/menu_buttons/teleport_menu_button_down.png'
         self.menu_buttons.append(button)
 
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
-                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.6])
+                                 on_press=self.open_close_menu, pos=[WINDOW.width * .85, WINDOW.height * .6])
         button.parameter = 'inventory'
         button.text = 'inv'
         button.background_normal = 'images/maps/menu_buttons/inventory_menu_button.png'
@@ -123,25 +125,26 @@ class WorldMap(ModalView):
         self.menu_buttons.append(button)
 
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
-                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.5])
+                                 on_press=self.open_close_menu, pos=[WINDOW.width * .85, WINDOW.height * .5])
         button.parameter = 'characters'
         button.background_normal = 'images/maps/menu_buttons/characters_menu_button.png'
         button.background_down = 'images/maps/menu_buttons/characters_menu_button_down.png'
         self.menu_buttons.append(button)
 
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
-                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.4])
+                                 on_press=self.open_close_menu, pos=[WINDOW.width * .85, WINDOW.height * .4])
         button.parameter = 'shop'
         button.background_normal = 'images/maps/menu_buttons/shop_menu_button.png'
         button.background_down = 'images/maps/menu_buttons/shop_menu_button_down.png'
         self.menu_buttons.append(button)
 
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
-                                 on_press=self.open_close_menu, pos=[WINDOW.width*.85, WINDOW.height*.3])
+                                 on_press=self.open_close_menu, pos=[WINDOW.width * .85, WINDOW.height * .3])
         button.parameter = 'exit'
+        button.text = '<<Back'
         button.background_normal = 'images/maps/menu_buttons/exit_menu_button.png'
         button.background_down = 'images/maps/menu_buttons/exit_menu_button_down.png'
-        button.bind(on_release=self.treasure_chest.open)
+        button.bind(on_release=self.dismiss)
         self.menu_buttons.append(button)
 
         for but in self.menu_buttons:
@@ -149,7 +152,7 @@ class WorldMap(ModalView):
             self.ids.rl.add_widget(but)
 
     def open_dialog(self):
-        self.dialog.location = self.current_location.name
+        self.dialog.location = self.current_location.loc_id
         self.dialog.level = '-1'
 
         if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == ('', ''):
@@ -159,7 +162,11 @@ class WorldMap(ModalView):
 
     def on_pre_open(self):
         self.is_first_open_location = True
-        self.open_location(self.locations[0])
+        if self.is_treasure_hunting:
+            self.locations = locations
+        else:
+            self.locations = locations_mine
+        self.open_location()
 
     def on_open(self):
         self.open_dialog()
@@ -215,13 +222,19 @@ class WorldMap(ModalView):
             round_button.round = i
             round_button.background_normal = 'images/level_pins/ne_najataya.png'
             round_button.background_down = 'images/level_pins/najataya.png'
-            if i == 0:
-                check = db.get_past_result(self.current_location.name, i)[3]
+
+            if self.current_location.loc_id == -1:
+                if i == 0:
+                    round_button.change_stars(0)
+                else:
+                    round_button.change_stars(0 if db.is_opened_mine_location(i) else -1)
+            elif self.current_location.loc_id == 0 and i == 0:
+                check = db.get_past_result(0, 0)[0]
                 round_button.change_stars(0 if check == -1 else check)
             else:
-                check = db.get_past_result(self.current_location.name, i - 1)[3]
+                check = db.get_past_result(self.current_location.loc_id, i - 1)[0]
                 if check > 0:
-                    check2 = db.get_past_result(self.current_location.name, i)[3]
+                    check2 = db.get_past_result(self.current_location.loc_id, i)[0]
                     round_button.change_stars(0 if check2 == -1 else check2)
                 else:
                     round_button.change_stars(-1)
@@ -244,13 +257,11 @@ class WorldMap(ModalView):
 
         self.cubes_game.world_map = self
         self.cubes_game.current_location = self.current_location
-        self.cubes_game.current_round = current_round
+        self.cubes_game.current_level = current_round
         self.cubes_game.round_swipes = current_round.swipes  # Этот раунд - типо уровень. А выше round - это кнопка уровня:)
         self.cubes_game.start_game()
 
         self.cubes_game.open()
-
-
 
 
 #######################################################
@@ -258,6 +269,7 @@ class WorldMap(ModalView):
 class SingleWorld:
 
     def __init__(self, **kwargs):
+        self.loc_id = 0
         self.name = 'Faceless'
         self.coords = tuple((0, 0), )
         self.background = ''
@@ -276,18 +288,38 @@ first_location.coords = [(WINDOW.width / 2.6, WINDOW.height / 6.15), (WINDOW.wid
 first_location.background = 'images/maps/world_map_1.png'
 first_location.round_button = Round
 first_location.name = 'Первая'
+first_location.loc_id = 0
 
 # Second Location
 second_location = SingleWorld()
 second_location.coords = [(WINDOW.width / 2.6, WINDOW.height / 6.15), (WINDOW.width / 1.55, WINDOW.height / 5.00),
-                         (WINDOW.width / 1.19, WINDOW.height / 3.45), (WINDOW.width / 1.67, WINDOW.height / 2.93),
-                         (WINDOW.width / 2.81, WINDOW.height / 2.65), (WINDOW.width / 3.13, WINDOW.height / 1.92),
-                         (WINDOW.width / 1.57, WINDOW.height / 1.76), (WINDOW.width / 1.17, WINDOW.height / 1.55),
-                         (WINDOW.width / 1.65, WINDOW.height / 1.38), (WINDOW.width / 3.00, WINDOW.height / 1.34),
-                         (WINDOW.width / 4.16, WINDOW.height / 1.18), (WINDOW.width / 2.0, WINDOW.height / 1.13)]
+                          (WINDOW.width / 1.19, WINDOW.height / 3.45), (WINDOW.width / 1.67, WINDOW.height / 2.93),
+                          (WINDOW.width / 2.81, WINDOW.height / 2.65), (WINDOW.width / 3.13, WINDOW.height / 1.92),
+                          (WINDOW.width / 1.57, WINDOW.height / 1.76), (WINDOW.width / 1.17, WINDOW.height / 1.55),
+                          (WINDOW.width / 1.65, WINDOW.height / 1.38), (WINDOW.width / 3.00, WINDOW.height / 1.34),
+                          (WINDOW.width / 4.16, WINDOW.height / 1.18), (WINDOW.width / 2.0, WINDOW.height / 1.13)]
 second_location.background = 'images/maps/world_map_2.png'
 second_location.round_button = Round
 second_location.name = 'Second'
+second_location.loc_id = 1
+
+# Stone mine Location
+stone_mine_location = SingleWorld()
+stone_mine_location.coords = [(WINDOW.width / 2.6, WINDOW.height / 6.15), (WINDOW.width / 1.55, WINDOW.height / 5.00),
+                          (WINDOW.width / 1.19, WINDOW.height / 3.45), (WINDOW.width / 1.67, WINDOW.height / 2.93),
+                          (WINDOW.width / 2.81, WINDOW.height / 2.65), (WINDOW.width / 3.13, WINDOW.height / 1.92),
+                          (WINDOW.width / 1.57, WINDOW.height / 1.76), (WINDOW.width / 1.17, WINDOW.height / 1.55),
+                          (WINDOW.width / 1.65, WINDOW.height / 1.38), (WINDOW.width / 3.00, WINDOW.height / 1.34),
+                          (WINDOW.width / 4.16, WINDOW.height / 1.18), (WINDOW.width / 2.0, WINDOW.height / 1.13)]
+stone_mine_location.background = 'images/maps/world_map_2.png'
+stone_mine_location.round_button = Round
+stone_mine_location.name = 'Stone mine'
+stone_mine_location.loc_id = -1
 
 # LOCATIONS
 locations = [first_location, second_location]
+
+locations_mine = [stone_mine_location]
+
+###########################
+WorldMap = WorldMap()

@@ -18,13 +18,13 @@
                     size: self.size
                     pos: self.pos
             Label:
-                id: crystal_fragments
+                id: gold
                 text: '1568'
                 canvas:
                     Color:
                         rgba: (1, 1, 1, 1)
                     Rectangle:
-                        source: 'images/items/crystal_fragments.png'
+                        source: 'images/items/gold.png'
                         size: [self.height, self.height]
                         pos: self.pos
             Label
@@ -47,27 +47,28 @@
                     source: 'images/items/fon.jpg'
                     size: self.size
                     pos: self.pos
-            RelativeLayout:
-                BoxLayout:
-                    size_hint_x: .4
-                    padding: 5
+            BoxLayout:
+                RelativeLayout:
+                    BoxLayout:
+                        size_hint_x: .4
+                        padding: 5
+                        Button:
+                            id: chest_qty_image
+                            size_hint_x: None
+                            width: self.height
+                            border: [0, 0, 0, 0]
+                            background_normal: 'images/items/chest.png'
+                            background_down: 'images/items/chest.png'
+                        Label:
+                            id: chest_qty
+                            text: '0'
                     Button:
-                        id: chest_qty_image
-                        size_hint_x: None
-                        width: self.height
-                        border: [0, 0, 0, 0]
-                        background_normal: 'images/items/chest.png'
-                        background_down: 'images/items/chest.png'
-                    Label:
-                        id: chest_qty
-                        text: '0'
-                Button:
-                    text: 'Open the treasure chest!'
-                    text_size: [self.width*.8, self.height]
-                    halign: 'right'
-                    valign: 'middle'
-                    background_color: (1, 1, 1, 0)
-                    on_release: root.open_treasure_chest()
+                        text: 'Open the treasure chest!'
+                        text_size: [self.width*.8, self.height]
+                        halign: 'right'
+                        valign: 'middle'
+                        background_color: (1, 1, 1, 0)
+                        on_release: root.open_treasure_chest()
         ScrollView:
             size_hint_y: .7
             canvas.before:
@@ -93,7 +94,7 @@
                 on_release: root.dismiss()
 
 <ItemBox>:
-    item_id: ''
+    item_id: 0
     description: ''
     size_hint_y: None
     padding: 5
@@ -138,7 +139,7 @@
 
 <Item>:
     name: ''
-    item_id: ''
+    item_id: 0
     description: ''
     image: ''
     border: [0, 0, 0, 0]

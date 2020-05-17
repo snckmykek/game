@@ -12,7 +12,7 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.lang.builder import Builder
 
-from world_map.main import WorldMap
+from home.main import Home
 from dialog.main import dialog
 from speech_parser import speech_parser
 from sqlite_requests import db
@@ -28,11 +28,11 @@ class Menu(BoxLayout):
     def __init__(self, **kwargs):
         super(Menu, self).__init__(**kwargs)
 
-        self.world_map = WorldMap()
+        self.home = Home
         self.dialog = dialog
 
     def play(self):
-        self.world_map.open()
+        self.home.open()
 
     def open_dialog(self):
         self.dialog.location = 'Первая'

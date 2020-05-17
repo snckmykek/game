@@ -26,15 +26,16 @@ class TreasureChest(ModalView):
         self.additional_card_is_activate = False
         self.owner = ObjectProperty
         self.preliminary_prizes = list()
+        self.current_chest_id = 16
 
-        self.items = [(('crystal_fragments', 70, 'images/treasure_chest/card1.png'), 25),
+        self.items = [(('gold', 70, 'images/treasure_chest/card1.png'), 25),
                       (('crystal', 10, 'images/treasure_chest/card1.png'), 1),
-                      (('crystal_fragments', 70, 'images/treasure_chest/card1.png'), 5),
-                      (('crystal_fragments', 70, 'images/treasure_chest/card1.png'), 15),
-                      (('crystal_fragments', 70, 'images/treasure_chest/card1.png'), 25),
-                      (('crystal_fragments', 70, 'images/treasure_chest/card1.png'), 10),
-                      (('crystal_fragments', 70, 'images/treasure_chest/card1.png'), 15),
-                      (('crystal_fragments', 70, 'images/treasure_chest/card1.png'), 25)
+                      (('gold', 70, 'images/treasure_chest/card1.png'), 5),
+                      (('gold', 70, 'images/treasure_chest/card1.png'), 15),
+                      (('gold', 70, 'images/treasure_chest/card1.png'), 25),
+                      (('gold', 70, 'images/treasure_chest/card1.png'), 10),
+                      (('gold', 70, 'images/treasure_chest/card1.png'), 15),
+                      (('gold', 70, 'images/treasure_chest/card1.png'), 25)
                       ]
 
     def on_pre_open(self):
@@ -51,7 +52,7 @@ class TreasureChest(ModalView):
         self.additional_card_is_open = False
         self.additional_card_is_activate = False
 
-        self.items = db.get_items_for_chest()
+        self.items = db.get_items_for_chest(self.current_chest_id)
 
     def on_dismiss(self):
         self.owner.refresh_inventory()
@@ -87,14 +88,14 @@ class TreasureChest(ModalView):
         self.card_is_open = True  # в третий раз сразу возврат
 
         if card == self.ids.card_1:
-            db.set_items_qty_change(self.preliminary_prizes[0][0], self.preliminary_prizes[0][1])
-            card.text = self.preliminary_prizes[0][0]
+            db.change_items_qty(self.preliminary_prizes[0][1], item_id=self.preliminary_prizes[0][0])
+            db.set_item_lvl(self.preliminary_prizes[0][0])
         elif card == self.ids.card_2:
-            db.set_items_qty_change(self.preliminary_prizes[1][0], self.preliminary_prizes[1][1])
-            card.text = self.preliminary_prizes[1][0]
+            db.change_items_qty(self.preliminary_prizes[1][1], item_id=self.preliminary_prizes[1][0])
+            db.set_item_lvl(self.preliminary_prizes[1][0])
         elif card == self.ids.card_3:
-            db.set_items_qty_change(self.preliminary_prizes[2][0], self.preliminary_prizes[2][1])
-            card.text = self.preliminary_prizes[2][0]
+            db.change_items_qty(self.preliminary_prizes[2][1], item_id=self.preliminary_prizes[2][0])
+            db.set_item_lvl(self.preliminary_prizes[2][0])
 
         anim = Animation(width=card.width * (6 / 5), height=card.height * (6 / 5), t='in_out_expo', d=.2) \
                + Animation(width=0, t='linear', d=.3)

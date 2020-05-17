@@ -61,3 +61,4 @@ WINDOW = WindowSettings()
 LEVELBUTTON = LevelButton()
 COMMONBUTTON = CommonButton()
 FIRSTSHARDS = 10
+LANGUAGE = 'ru'

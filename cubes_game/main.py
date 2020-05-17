@@ -34,14 +34,12 @@ class CubesGame(ModalView):
         self.store = store
 
         self.world_map = ObjectProperty
-        self.current_round = ObjectProperty
+        self.current_level = ObjectProperty
         self.current_location = ObjectProperty
         self.cols = 4  # Колонки
         self.rows = 4  # Столбцы
         self.swipes = 20  # Количество ходов
-        self.round_swipes = 20  # Это число не меняется в процессе игры (только при запуске) и при перезапуске используется
-        self.colors = 4  # Цветов в раунде
-        self.cube_colors = [(1, 0, 0, 1), (0, 1, 0, 1), (.3, .88, .9, 1), (.8, 0, .87, 1), (.9, .5, 0, 1)]
+        self.level_swipes = 20  # Это число не меняется в процессе игры (только при запуске) и при перезапуске используется
         self.task_name = 'break_stone_color'  # 'get_prize', 'break_stone'
         self.mega_task_name = 'combo'
 
@@ -72,9 +70,11 @@ class CubesGame(ModalView):
         self.starting_point = None  # Чтобы знать, откуда начал двигать, и если чо, вернуться обратно
         self.combo = 0
         self.statistics = dict()
+        self.colors_bonuses = dict()  # {(1, 0, 0, 1): 5, color: bonus, ...}
+        self.cube_colors = list()  # [(1, 0, 0, 1), (r, g, b, a), ...]
 
     def go_clock(self, dt):
-        if self.current_round.time == -1:  # Если игра не на время
+        if self.current_level.time == -1:  # Если игра не на время
             return
 
         if self.game_is_active:
@@ -89,8 +89,8 @@ class CubesGame(ModalView):
         self.open_dialog()
 
     def open_dialog(self):
-        self.dialog.location = self.current_location.name
-        self.dialog.level = self.current_round.number
+        self.dialog.location = self.current_location.loc_id
+        self.dialog.level = self.current_level.lvl_id
 
         if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == 'stub' or self.dialog.current_npc_speech == (
                 '', ''):
@@ -170,20 +170,20 @@ class CubesGame(ModalView):
 
         self.touch_blocked = True
         # Запускается анимация на перемещение по нужным координатам для всех кубов в строке или колонке
-        is_rounding_up = None  # Эта наркомания обусловлена тем, что бывает подвисают координаты кнопок
+        is_leveling_up = None  # Эта наркомания обусловлена тем, что бывает подвисают координаты кнопок
         # и соседние кнопки разъезжаются в разные стороны
         if self.y_movement_blocked:
             for but in self.active_line:
-                if is_rounding_up is None:
-                    is_rounding_up = round(but.pos[0] / but.width) == math.ceil(but.pos[0] / but.width)
-                but.column = math.ceil(but.pos[0] / but.width) if is_rounding_up else math.floor(but.pos[0] / but.width)
+                if is_leveling_up is None:
+                    is_leveling_up = round(but.pos[0] / but.width) == math.ceil(but.pos[0] / but.width)
+                but.column = math.ceil(but.pos[0] / but.width) if is_leveling_up else math.floor(but.pos[0] / but.width)
                 animation.animated_properties['pos'] = (but.column * but.width, but.pos[1])
                 animation.start(but)
         elif self.x_movement_blocked:
             for but in self.active_column:
-                if is_rounding_up is None:
-                    is_rounding_up = round(but.pos[1] / but.height) == math.ceil(but.pos[1] / but.height)
-                but.line = math.ceil(but.pos[1] / but.height) if is_rounding_up else math.floor(but.pos[1] / but.height)
+                if is_leveling_up is None:
+                    is_leveling_up = round(but.pos[1] / but.height) == math.ceil(but.pos[1] / but.height)
+                but.line = math.ceil(but.pos[1] / but.height) if is_leveling_up else math.floor(but.pos[1] / but.height)
                 animation.animated_properties['pos'] = (but.pos[0], but.line * but.height)
                 animation.start(but)
         Clock.schedule_once(self.boom, .25)
@@ -230,9 +230,11 @@ class CubesGame(ModalView):
         for cube in set(suicidal_cubes):
             self.statistics[tuple(cube.background_color)] += 1
 
-            self.score += 1 + (int(cube.text) if cube.text != '' else 0)
+            self.score += 1 + (int(cube.text) if cube.text != '' else 0) \
+                + self.colors_bonuses[tuple(cube.background_color)]
+
             cube.text = ''
-            do_animation('decrease', cube, self.cube_colors[random.randint(0, self.colors - 1)])
+            do_animation('decrease', cube, random.choice(self.cube_colors))
 
         copy_background_objects = self.background_objects.copy()
         for background_obj in copy_background_objects:
@@ -303,13 +305,13 @@ class CubesGame(ModalView):
 
         try:
             if self.task_name == 'break_stone_color':
-                self.task_counter = self.current_round.task_counter - self.statistics[tuple(self.ids.task_label.background_color)]
+                self.task_counter = self.current_level.task_counter - self.statistics[tuple(self.ids.task_label.background_color)]
 
             if self.mega_task_name == 'break_stone_color':
-                self.mega_task_counter = self.current_round.mega_task_counter \
+                self.mega_task_counter = self.current_level.mega_task_counter \
                                       - self.statistics[tuple(self.ids.mega_task_label.background_color)]
             elif self.mega_task_name == 'combo':
-                self.mega_task_counter = self.current_round.mega_task_counter - self.statistics['combo']
+                self.mega_task_counter = self.current_level.mega_task_counter - self.statistics['combo']
 
         except AttributeError:
             pass
@@ -393,39 +395,40 @@ class CubesGame(ModalView):
         for cube in set(suicidal_cubes):
             self.score += 1 + (int(cube.text) if cube.text != '' else 0)
             cube.text = ''
-            do_animation('explosion', cube, self.cube_colors[random.randint(0, self.colors - 1)])
+            do_animation('explosion', cube, random.choice(self.cube_colors))
         Clock.schedule_once(self.boom, .6)
 
         return True
 
     def start_game(self, cubes=None):
         self.game_is_active = False
-        self.cols = self.current_round.cols
-        self.rows = self.current_round.rows
-        self.swipes = self.current_round.swipes
-        self.colors = self.current_round.colors
-        self.time = self.current_round.time
-        self.task_counter = self.current_round.task_counter
-        self.mega_task_counter = self.current_round.mega_task_counter
-        self.task_name = self.current_round.task_name
-        self.mega_task_name = self.current_round.mega_task_name
-        self.scores_for_stars = db.get_scores_for_stars(self.current_location.name, self.current_round.number)
+        self.cols = self.current_level.cols
+        self.rows = self.current_level.rows
+        self.swipes = self.current_level.swipes
+        self.colors_bonuses = self.current_level.colors_bonuses
+        self.cube_colors = self.current_level.cube_colors
+        self.time = self.current_level.time
+        self.task_counter = self.current_level.task_counter
+        self.mega_task_counter = self.current_level.mega_task_counter
+        self.task_name = self.current_level.task_name
+        self.mega_task_name = self.current_level.mega_task_name
+        self.scores_for_stars = db.get_scores_for_stars(self.current_level.loc_id, self.current_level.lvl_id)
         self.ids.progress.max = max(self.scores_for_stars)
         self.ids.max_score_label.text = str(self.ids.progress.max)
-        self.ids.task_label.background_normal = self.current_round.task_image
-        self.ids.mega_task_label.background_normal = self.current_round.mega_task_image
+        self.ids.task_label.background_normal = self.current_level.task_image
+        self.ids.mega_task_label.background_normal = self.current_level.mega_task_image
         self.a = WINDOW.width / ((self.cols if self.cols >= self.rows else self.rows) + 1)
         self.ids.rl.size = (self.a * self.cols, self.a * self.rows)
         if cubes:
             pass  # stub Прошло 4 месяца и я не ебу зачем эта заглушка долбоеб почему бы не пояснить было тогда??))))00
 
         if self.task_name == 'break_stone_color':
-            self.ids.task_label.background_color = self.cube_colors[random.randint(0, self.colors - 1)]
+            self.ids.task_label.background_color = random.choice(self.cube_colors)
         else:
             self.ids.task_label.background_color = (1, 1, 1, 0)
 
         if self.mega_task_name == 'break_stone_color':
-            self.ids.mega_task_label.background_color = self.cube_colors[random.randint(0, self.colors - 1)]
+            self.ids.mega_task_label.background_color = random.choice(self.cube_colors)
         elif self.mega_task_name == 'combo':
             self.ids.mega_task_label.background_color = (1, 1, 1, 1)
         else:
@@ -448,7 +451,7 @@ class CubesGame(ModalView):
                 button = Cube(size_hint=(None, None), size=(self.a, self.a),
                               pos=list(map(lambda x, y: x * y, coords, (self.a, self.a))),
                               on_touch_move=self.movement, on_touch_down=self.down, on_touch_up=self.up)
-                button.background_color = self.cube_colors[random.randint(0, self.colors - 1)]
+                button.background_color = random.choice(self.cube_colors)
                 button.pattern = self.cube_pattern
                 button.background_down = button.pattern + (button.text if button.text != '' else '0') + '.png'
                 button.background_normal = button.pattern + (button.text if button.text != '' else '0') + '.png'
@@ -461,10 +464,12 @@ class CubesGame(ModalView):
         for obj in self.objects:
             self.playing_field.add_widget(obj)
 
-        character = db.get_current_character()
+        character = db.get_current_manuscript()
         self.ids.character_level.text = str(character[3])
         self.ids.character.skills.clear_widgets()
         for skill in db.get_skills(character[0]):
+            if not skill[5]:  # это параметр скилла is_unblock
+                continue
             sk_box = SkillBox()
             sk = sk_box.ids.skill
             sk.name = skill[1]
@@ -490,39 +495,46 @@ class GameEnding(ModalView):
         self.auto_dismiss = False
         self.real_prize = {}
         self.current_result = []
+        self.is_treasure_hunting = True
 
     def on_pre_open(self):
         self.score = self.game.score
         self.task_is_completed = (self.game.task_counter == 0)
         self.mega_task_is_completed = (self.game.mega_task_counter == 0)
+        self.is_treasure_hunting = self.game.world_map.is_treasure_hunting
 
         if not self.task_is_completed:
             self.score = 0
 
         self.ids.lbl.text = 'GG! Your score is: ' + str(self.score)
+
         self.real_prize = self.get_real_prize()
         self.ids.stars.text = 'Stars: ' + str(self.real_prize['stars'])
         self.ids.exp.text = str(self.real_prize['exp'])
-        self.ids.crystal_fragments.text = str(self.real_prize['crystal_fragments'])
+        self.ids.gold.text = str(self.real_prize['gold'])
 
     def get_real_prize(self):
-        self.current_result = list(db.get_current_result(self.game.current_location.name, self.game.current_round.number,
-                                                    self.score))
+        self.current_result = list(db.get_current_result(self.game.current_location.loc_id,
+                                                         self.game.current_level.lvl_id, self.score))
         self.up_current_result_by_bonuses(self.current_result)
-        past_result = db.get_past_result(self.game.current_location.name, self.game.current_round.number)
+        if self.is_treasure_hunting:
+            past_result = db.get_past_result(self.game.current_location.loc_id, self.game.current_level.lvl_id)
+        else:
+            past_result = [0, 0, 0]  # Сделано, чтобы при работе на шахте всегда платились бабки, а в приключении только первый раз
 
         real_prize = {
             'stars': self.current_result[0],
             'stars_difference': (self.current_result[0] - past_result[0]) if self.current_result[0] > past_result[0] else 0,
             'exp': (self.current_result[1] - past_result[1]) if self.current_result[1] > past_result[1] else 0,
-            'crystal_fragments': (self.current_result[2] - past_result[2]) if self.current_result[2] > past_result[2] else 0
+            'gold': (self.current_result[2] - past_result[2]) if self.current_result[2] > past_result[2] else 0
             }
 
         return real_prize
 
     def up_current_result_by_bonuses(self, current_result):
-        if self.mega_task_is_completed:  # Добавляет звезду за выполненое доп задание
-            current_result[0] += 1
+        if self.is_treasure_hunting:
+            if self.mega_task_is_completed:  # Добавляет звезду за выполненое доп задание
+                current_result[0] += 1
 
     def play_again(self):
         self.save_result()
@@ -537,16 +549,41 @@ class GameEnding(ModalView):
         self.game.dismiss()
 
     def save_result(self):
-        db.set_completed_level(self.game.current_location.name, self.game.current_round.number)
-        if (self.real_prize['exp'] != 0) or (self.real_prize['crystal_fragments'] != 0):
-            db.set_current_result(self.game.current_location.name, self.game.current_round.number,
-                                  self.current_result[1], self.current_result[2], self.current_result[0])
+        if self.is_treasure_hunting:
+            db.set_completed_level(self.game.current_location.loc_id, self.game.current_level.lvl_id)
+            if (self.real_prize['exp'] != 0) or (self.real_prize['gold'] != 0):
+                db.set_current_result(self.game.current_location.loc_id, self.game.current_level.lvl_id,
+                                      self.current_result[1], self.current_result[2], self.current_result[0])
 
-            db.set_characters_exp(self.ids.character.name, self.real_prize['exp'])
-            db.set_crystal_fragments(self.real_prize['crystal_fragments'])
-        elif self.real_prize['stars_difference'] != 0:
-            db.set_current_result(self.game.current_location.name, self.game.current_round.number,
-                                  self.current_result[1], self.current_result[2], self.current_result[0])
+                db.set_manuscript_exp(self.ids.character.name, self.real_prize['exp'])
+                db.change_items_qty(self.real_prize['gold'], object_type='gold')
+            elif self.real_prize['stars_difference'] != 0:
+                db.set_current_result(self.game.current_location.loc_id, self.game.current_level.lvl_id,
+                                      self.current_result[1], self.current_result[2], self.current_result[0])
+        else:
+            db.change_items_qty(self.real_prize['gold'], object_type='gold')
+
+        # делать еще таблицу (или в текущую) и в нее загружать счетчик для количества раз пройденных уровней
+
+        if not self.is_treasure_hunting:
+            # stub получить количество пройденных уровней, установить нужное кол-во звезд
+            # (не надо проверку, тупо всегда перезапись)
+            pass
+
+    def on_dismiss(self):
+        self.execute_action()
+
+    def execute_action(self):
+
+        actions = db.get_actions(self.game.current_location.loc_id, self.game.current_level.lvl_id)  # (action_id, action_type, object_id)
+
+        for string in actions:
+            if string[1] == 'open_skill':
+                db.unblock_skill(string[2])
+            elif string[1] == 'open_manuscript':
+                db.unblock_manuscript(string[2])
+
+        db.change_actions_completed([x[0] for x in actions])
 
 
 class Cube(Button):
@@ -578,7 +615,7 @@ class Character(Button):
         self.character_changer = CharacterChanger()
         self.skills = ObjectProperty
         self.cubes_game = ObjectProperty
-        character = db.get_current_character()
+        character = db.get_current_manuscript()
         self.name = character[0]
         self.background_normal = character[1] if character[6] == '1' else character[2]
         self.available = True if character[6] == '1' else False
@@ -598,7 +635,7 @@ class Character2(Button):
         self.character_changer = CharacterChanger()
         self.skills = ObjectProperty
         self.cubes_game = ObjectProperty
-        character = db.get_current_character()
+        character = db.get_current_manuscript()
         self.name = character[0]
         self.background_normal = character[1] if character[6] == '1' else character[2]
         self.available = True if character[6] == '1' else False
@@ -622,11 +659,11 @@ class CharacterChanger(ModalView):
 
     def on_pre_open(self):
         self.ids.character_selection.clear_widgets()
-        for ch in db.get_characters():
-            but = Button(background_normal=ch[1] if ch[6] == '1' else ch[2], border=[0, 0, 0, 0])
+        for ch in db.get_manuscripts():
+            but = Button(background_normal=ch[1] if str(ch[6]) == '1' else ch[2], border=[0, 0, 0, 0])
             but.bind(on_press=self.change_character)
             but.background_down = but.background_normal
-            but.available = True if ch[6] == '1' else False
+            but.available = True if str(ch[6]) == '1' else False
             but.level = ch[3]
             but.name = ch[0]
             self.ids.character_selection.add_widget(but)
@@ -641,12 +678,14 @@ class CharacterChanger(ModalView):
 
         self.character.name = instance.name
         self.character.background_normal = instance.background_normal
-        db.set_current_character(self.character.name)
+        db.set_current_manuscript(self.character.name)
 
         if self.change_skills:
             self.character_level.text = str(instance.level)
             self.character.skills.clear_widgets()
             for skill in db.get_skills(instance.name):
+                if not skill[5]:  # это параметр скилла is_unblock
+                    continue
                 sk_box = SkillBox()
                 sk = sk_box.ids.skill
                 sk.name = skill[1]
@@ -670,6 +709,7 @@ class Skill(ToggleButton):
     def __init__(self, **kwargs):
         super(Skill, self).__init__(**kwargs)
 
+        self.skill_id = -1
         self.name = ''
         self.group = 'skills'
         self.skill_level = 1
@@ -689,7 +729,7 @@ class Skill(ToggleButton):
 
     def skill_is_activated(self):
         self.quantity -= 1
-        db.set_skill_quantity(self.name, self.quantity)
+        db.set_skill_quantity(self.skill_id, self.quantity)
 
         if self.quantity <= 0:
             self.state = 'normal'
@@ -715,7 +755,7 @@ class CharacterLevelInfo(ModalView):
         self.character_name = ''
 
     def on_pre_open(self):
-        info = db.get_character_level_info(self.character_name)
+        info = db.get_manuscript_lvl_info(self.character_name)
         level = info[0]
         current_exp = info[1]
         exp_for_next_level = info[2]

@@ -1,0 +1,24 @@
+#:import WINDOW global_variables.WINDOW
+
+<Home>:
+    background: 'images/home/fon.png'
+    border: [0, 0, 0, 0]
+    GridLayout:
+        cols: 2
+        spacing: 50
+        Button:
+            background_color: (1, 1, 1, .6)
+            text: 'Online Store'
+            on_release: root.open_game_store()
+        Button:
+            background_color: (1, 1, 1, .6)
+            text: 'Daily bonus'
+            on_release: root.open_daily_bonus()
+        Button:
+            background_color: (1, 1, 1, .6)
+            text: 'Stone mine'
+            on_release: root.play_stone_mine()
+        Button:
+            background_color: (1, 1, 1, .6)
+            text: 'Treasure hunt'
+            on_release: root.play_treasure_hunt()

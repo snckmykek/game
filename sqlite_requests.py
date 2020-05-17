@@ -1,5 +1,7 @@
 import sqlite3
 from kivy.clock import Clock
+import xlrd
+import global_variables
 
 
 class Database(object):
@@ -7,19 +9,34 @@ class Database(object):
     def __init__(self):
         self.con = sqlite3.connect('database_cubes.db')
         self.cur = self.con.cursor()
-        self.sqlite_create_db()
-        self.insert_characters_levels()
-        self.insert_characters_or_skills()
-        self.insert_characters_or_skills('characters')
-        self.insert_levels()
-        self.insert_global_info()
-        self.insert_levels_settings()
-        self.insert_items()
-        self.insert_chest()
+        # self.dict_exel = dict()
+        # self.read_exel()
+        # self.sqlite_create_db()
+        # self.insert_data()
+        #
+        # for item in self.get_items():
+        #     if item[7] == 0:
+        #         self.set_item_lvl(item[0])
 
     def close(self):
         self.cur.close()
         self.con.close()
+
+    def read_exel(self):
+        wb = xlrd.open_workbook('start_db.xlsx')
+        for name in wb.sheet_names():
+            self.dict_exel.update({name: list()})
+
+            sheet = wb.sheet_by_name(name)
+
+            for nrow in range(sheet.nrows):
+                if nrow == 0:
+                    continue
+                row = list()
+                for ncol in range(sheet.ncols):
+                    row.append(sheet.cell_value(nrow, ncol))
+
+                self.dict_exel[name].append(row)
 
     def sqlite_create_db(self):
         self.cur.execute('CREATE TABLE IF NOT EXISTS global('
@@ -27,19 +44,19 @@ class Database(object):
                          'value)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS levels('
-                         'location TEXT,'
-                         'level TEXT,'
-                         'is_completed TEXT,'
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
+                         'is_completed INTEGER,'
                          'difficult INTEGER,'
                          'exp INTEGER,'
-                         'crystal_fragments INTEGER,'
+                         'gold INTEGER,'
                          'scores INTEGER)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS completed_levels('
-                         'location TEXT,'
-                         'level TEXT,'
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
                          'exp INTEGER,'
-                         'crystal_fragments INTEGER,'
+                         'gold INTEGER,'
                          'stars INTEGER)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS info('
@@ -49,419 +66,164 @@ class Database(object):
                          'level_info TEXT,'
                          'level_question_number TEXT,'
                          'level_question TEXT, '
-                         'is_completed TEXT)')
+                         'is_completed INTEGER)')
 
-        self.cur.execute('CREATE TABLE IF NOT EXISTS characters('
-                         'character TEXT,'
-                         'character_available_image TEXT,'
-                         'character_not_available_image TEXT,'
-                         'character_level INTEGER,'
+        self.cur.execute('CREATE TABLE IF NOT EXISTS speech_and_descriptions('
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
+                         'type TEXT,'
+                         'lang TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS manuscripts('
+                         'id INTEGER,'
+                         'available_image TEXT,'
+                         'not_avaliable_image TEXT,'
+                         'lvl INTEGER,'
                          'exp INTEGER,'
-                         'exp_for_next_level INTEGER,'
-                         'is_available TEXT,'
-                         'is_selected TEXT)')
+                         'exp_for_next_lvl INTEGER,'
+                         'is_available INTEGER)')
 
-        self.cur.execute('CREATE TABLE IF NOT EXISTS characters_skills('
-                         'character TEXT,'
-                         'skill TEXT,'
-                         'skill_image TEXT,'
-                         'skill_level INTEGER,'
+        self.cur.execute('CREATE TABLE IF NOT EXISTS manuscripts_lang('
+                         'id INTEGER,'
+                         'name TEXT,'
+                         'lang TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS skills('
+                         'id INTEGER,'
+                         'manuscript_id INTEGER,'
+                         'image TEXT,'
+                         'lvl INTEGER,'
                          'quantity INTEGER,'
-                         'is_unblock TEXT,'
-                         'crystal_fragments_cost INTEGER)')
+                         'is_unblock INTEGER,'
+                         'cost INTEGER)')
 
-        self.cur.execute('CREATE TABLE IF NOT EXISTS characters_levels('
-                         'character TEXT,'
-                         'character_level INTEGER,'
-                         'exp_for_level INTEGER)')
+        self.cur.execute('CREATE TABLE IF NOT EXISTS skills_lang('
+                         'id INTEGER,'
+                         'name TEXT,'
+                         'lang TEXT)')
 
-        self.cur.execute('CREATE TABLE IF NOT EXISTS levels_settings('
-                         'location TEXT,'
-                         'level TEXT,'
+        self.cur.execute('CREATE TABLE IF NOT EXISTS for_up_lvl('
+                         'object_id INTEGER,'
+                         'object_type TEXT,'
+                         'lvl INTEGER,'
+                         'exp_for_lvl INTEGER)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS lvl_settings('
+                         'loc_id INTEGER,'
+                         'id INTEGER,'
                          'cols INTEGER,'
                          'rows INTEGER,'
                          'swipes INTEGER,'
                          'time INTEGER,'
-                         'colors INTEGER,'
-                         'text_level TEXT,'
-                         'name TEXT,'
                          'task_name TEXT,'
                          'task_counter INTEGER,'
                          'mega_task_name TEXT,'
                          'mega_task_counter INTEGER,'
                          'task_image TEXT,'
-                         'mega_task_image TEXT)')
+                         'mega_task_image TEXT,'
+                         'pos_hint_x REAL,'
+                         'pos_hint_y REAL)')
 
-        self.cur.execute('CREATE TABLE IF NOT EXISTS inventory('
-                         'item TEXT,'
+        self.cur.execute('CREATE TABLE IF NOT EXISTS lvl_settings_lang('
+                         'id INTEGER,'
+                         'loc_id INTEGER,'
+                         'name TEXT,'
+                         'lang TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS items_and_resources('
+                         'id INTEGER,'
+                         'image TEXT,'
+                         'gold_cost INTEGER,'
+                         'crystal_cost INTEGER,'
+                         'object_type TEXT,'
+                         'lvl INTEGER,'
+                         'qty INTEGER,'
+                         'qty_for_next_lvl INTEGER,'
+                         'dev_info TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS items_and_resources_lang('
+                         'id INTEGER,'
                          'name TEXT,'
                          'description TEXT,'
-                         'quantity INTEGER,'
-                         'image TEXT)')
+                         'lang TEXT)')
 
-        self.cur.execute('CREATE TABLE IF NOT EXISTS chest('
-                         'chest TEXT,'
-                         'chest_image TEXT,'
-                         'item_id TEXT,'
+        self.cur.execute('CREATE TABLE IF NOT EXISTS chests('
+                         'id INTEGER,'
+                         'image_closed TEXT,'
+                         'image_opened TEXT,'
+                         'item_id INTEGER,'
                          'quantity INTEGER,'
                          'probability REAL)')
 
-    def insert_global_info(self):
+        self.cur.execute('CREATE TABLE IF NOT EXISTS chests_lang('
+                         'id INTEGER,'
+                         'name TEXT,'
+                         'lang TEXT)')
 
-        if not self.table_is_empty('global'):
-            return
+        self.cur.execute('CREATE TABLE IF NOT EXISTS global_bonuses('
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
+                         'bonus TEXT,'
+                         'bonus_type TEXT,'  # mine, ...
+                         'quantity REAL)')
 
-        global_info = {'current_character': 'knight',
-                       'crystal': 0,
-                       'crystal_fragments': 0,
-                       'current_character_developing': 'knight'
-                       }
+        self.cur.execute('CREATE TABLE IF NOT EXISTS game_bonuses('
+                         'object_id INTEGER,'
+                         'object_type TEXT,'
+                         'bonus_item_id INTEGER)')
 
-        for key, val in global_info.items():
-            request = 'INSERT INTO global VALUES("{}", "{}")'.format(key, val)
-            self.cur.execute(request)
+        self.cur.execute('CREATE TABLE IF NOT EXISTS colors('
+                         'id INTEGER,'
+                         'r REAL,'
+                         'g REAL,'
+                         'b REAL,'
+                         'a REAL)')
 
-        self.commit()
+        self.cur.execute('CREATE TABLE IF NOT EXISTS level_colors('
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
+                         'color_id INTEGER)')
 
-    def insert_levels(self):
+        self.cur.execute('CREATE TABLE IF NOT EXISTS actions('
+                         'id INTEGER,'
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
+                         'action_type TEXT,'
+                         'object_id INTEGER,'
+                         'is_completed INTEGER)')
 
-        if not self.table_is_empty('levels'):
-            return
+    def insert_data(self):
 
-        levels = [('Первая', '0', '0', '1', 3, 30, 70),
-                  ('Первая', '0', '0', '2', 4, 40, 130),
-                  ('Первая', '0', '0', '3', 5, 50, 180),
-
-                  ('Первая', '1', '0', '1', 5, 30, 100),
-                  ('Первая', '1', '0', '2', 6, 40, 150),
-                  ('Первая', '1', '0', '3', 7, 50, 200),
-
-                  ('Первая', '2', '0', '1', 7, 30, 80),
-                  ('Первая', '2', '0', '2', 9, 50, 120),
-                  ('Первая', '2', '0', '3', 11, 70, 160),
-
-                  ('Первая', '3', '0', '1', 10, 30, 100),
-                  ('Первая', '3', '0', '2', 12, 60, 150),
-                  ('Первая', '3', '0', '3', 14, 80, 200),
-
-                  ('Первая', '4', '0', '1', 10, 40, 250),
-                  ('Первая', '4', '0', '2', 12, 50, 350),
-                  ('Первая', '4', '0', '3', 14, 60, 450),
-
-                  ('Первая', '5', '0', '1', 20, 50, 450),
-                  ('Первая', '5', '0', '2', 30, 80, 500),
-                  ('Первая', '5', '0', '3', 45, 120, 550),
-
-                  ('Первая', '6', '0', '1', 20, 30, 250),
-                  ('Первая', '6', '0', '2', 25, 60, 350),
-                  ('Первая', '6', '0', '3', 30, 90, 450),
-
-                  ('Первая', '7', '0', '1', 3, 30, 70),
-                  ('Первая', '7', '0', '2', 4, 40, 130),
-                  ('Первая', '7', '0', '3', 5, 50, 180),
-
-                  ('Первая', '8', '0', '1', 5, 30, 100),
-                  ('Первая', '8', '0', '2', 6, 40, 150),
-                  ('Первая', '8', '0', '3', 7, 50, 200),
-
-                  ('Первая', '9', '0', '1', 7, 30, 80),
-                  ('Первая', '9', '0', '2', 9, 50, 120),
-                  ('Первая', '9', '0', '3', 11, 70, 160),
-
-                  ('Первая', '10', '0', '1', 10, 30, 100),
-                  ('Первая', '10', '0', '2', 12, 60, 150),
-                  ('Первая', '10', '0', '3', 14, 80, 200),
-
-                  ('Первая', '11', '0', '1', 10, 40, 250),
-                  ('Первая', '11', '0', '2', 12, 50, 350),
-                  ('Первая', '11', '0', '3', 14, 60, 450),
-
-                  ('Первая', '12', '0', '1', 20, 50, 450),
-                  ('Первая', '12', '0', '2', 30, 80, 500),
-                  ('Первая', '12', '0', '3', 45, 120, 550),
-
-                  ('Second', '0', '0', '1', 3, 30, 70),
-                  ('Second', '0', '0', '2', 4, 40, 130),
-                  ('Second', '0', '0', '3', 5, 50, 180),
-
-                  ('Second', '1', '0', '1', 5, 30, 100),
-                  ('Second', '1', '0', '2', 6, 40, 150),
-                  ('Second', '1', '0', '3', 7, 50, 200),
-
-                  ('Second', '2', '0', '1', 7, 30, 80),
-                  ('Second', '2', '0', '2', 9, 50, 120),
-                  ('Second', '2', '0', '3', 11, 70, 160),
-
-                  ('Second', '3', '0', '1', 10, 30, 100),
-                  ('Second', '3', '0', '2', 12, 60, 150),
-                  ('Second', '3', '0', '3', 14, 80, 200),
-
-                  ('Second', '4', '0', '1', 10, 40, 250),
-                  ('Second', '4', '0', '2', 12, 50, 350),
-                  ('Second', '4', '0', '3', 14, 60, 450),
-
-                  ('Second', '5', '0', '1', 20, 50, 450),
-                  ('Second', '5', '0', '2', 30, 80, 500),
-                  ('Second', '5', '0', '3', 45, 120, 550),
-
-                  ('Second', '6', '0', '1', 20, 30, 250),
-                  ('Second', '6', '0', '2', 25, 60, 350),
-                  ('Second', '6', '0', '3', 30, 90, 450),
-
-                  ('Second', '7', '0', '1', 3, 30, 70),
-                  ('Second', '7', '0', '2', 4, 40, 130),
-                  ('Second', '7', '0', '3', 5, 50, 180),
-
-                  ('Second', '8', '0', '1', 5, 30, 100),
-                  ('Second', '8', '0', '2', 6, 40, 150),
-                  ('Second', '8', '0', '3', 7, 50, 200),
-
-                  ('Second', '9', '0', '1', 7, 30, 80),
-                  ('Second', '9', '0', '2', 9, 50, 120),
-                  ('Second', '9', '0', '3', 11, 70, 160),
-
-                  ('Second', '10', '0', '1', 10, 30, 100),
-                  ('Second', '10', '0', '2', 12, 60, 150),
-                  ('Second', '10', '0', '3', 14, 80, 200),
-
-                  ('Second', '11', '0', '1', 10, 40, 250),
-                  ('Second', '11', '0', '2', 12, 50, 350),
-                  ('Second', '11', '0', '3', 14, 60, 450),
-
-                  ('Second', '12', '0', '1', 20, 50, 450),
-                  ('Second', '12', '0', '2', 30, 80, 500),
-                  ('Second', '12', '0', '3', 45, 120, 550)
-                  ]
-
-        for level in levels:
-            request = 'INSERT INTO levels VALUES('
-            for val in level:
-                request += '"{}",'.format(val)
-            request = request[:-1] + ')'
-            self.cur.execute(request)
-        self.commit()
-
-    def insert_levels_settings(self):
-
-        if not self.table_is_empty('levels_settings'):
-            return
-
-        levels_settings = \
-            [
-                ('Первая', '0', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '1', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '2', 3, 3, 20, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '3', 5, 5, 20, -1, 5, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '4', 5, 5, 5, -1, 2, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '5', 8, 8, 20, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '6', 4, 6, 30, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '7', 5, 5, 10, 60, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '8', 3, 3, 20, 100, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '9', 5, 5, 20, 100, 5, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '10', 5, 5, 5, 25, 2, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '11', 8, 8, 20, 120, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Первая', '12', 4, 6, 30, 150, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-
-                ('Second', '0', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '1', 5, 5, 10, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '2', 3, 3, 20, -1, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '3', 5, 5, 20, -1, 5, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '4', 5, 5, 5, -1, 2, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '5', 8, 8, 20, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '6', 4, 6, 30, -1, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '7', 5, 5, 10, 60, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '8', 3, 3, 20, 100, 3, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '9', 5, 5, 20, 100, 5, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '10', 5, 5, 5, 25, 2, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '11', 8, 8, 20, 120, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png"),
-                ('Second', '12', 4, 6, 30, 150, 4, "", "", "break_stone_color", 15, "combo", 3,
-                 "images/info_and_tasks/task_break_stone_color.png", "images/info_and_tasks/combo.png")
-            ]
-
-        for level_settings in levels_settings:
-            request = 'INSERT INTO levels_settings VALUES('
-            for val in level_settings:
-                request += '"{}",'.format(val)
-            request = request[:-1] + ')'
-            self.cur.execute(request)
-        self.commit()
-
-    def insert_items(self):
-
-        if not self.table_is_empty('inventory'):
-            return
-
-        items = \
-            [
-                ('item_0', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 56,
-                 'images/items/item_0.png'),
-                ('item_1', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 113,
-                 'images/items/item_1.png'),
-                ('item_2', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 633,
-                 'images/items/item_2.png'),
-                ('item_3', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 1,
-                 'images/items/item_3.png'),
-                ('item_4', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 96,
-                 'images/items/item_4.png'),
-                ('item_5', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 13,
-                 'images/items/item_5.png'),
-                ('item_6', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_6.png'),
-                ('item_7', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_7.png'),
-                ('item_8', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_8.png'),
-                ('item_9', 'Кровавый амулет', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_9.png'),
-                ('item_10', 'Разноцветный амулет', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_10.png'),
-                ('item_11', 'Вероятность найти сундук', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_11.png'),
-                ('chest_1', 'Сундук с сокровищами', 'Выпадает рандом элемент', 19,
-                 'images/items/chest.png'),
-                ('item_12', 'Вероятность найти ресурсы', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_12.png'),
-                ('item_13', 'Комбо бонус', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/item_13.png'),
-                ('crystal', 'Кристаллы', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/crystal.png'),
-                ('crystal_fragments', 'Золото', 'Увеличивает количество очков за красные элементы', 0,
-                 'images/items/crystal_fragments.png')
-            ]
-
-        for item in items:
-            request = 'INSERT INTO inventory VALUES('
-            for val in item:
-                request += '"{}",'.format(val)
-            request = request[:-1] + ')'
-            self.cur.execute(request)
-        self.commit()
-
-    def insert_chest(self):
-
-        if not self.table_is_empty('chest'):
-            return
-
-        items = \
-            [
-                ('chest_1', 'images/items/chest.png', 'item_0', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_1', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_2', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_3', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_4', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_5', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_6', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_7', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_8', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_9', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_10', 1, 3),
-                ('chest_1', 'images/items/chest.png', 'item_11', 1, 0.5),
-                ('chest_1', 'images/items/chest.png', 'item_12', 1, 0.5),
-                ('chest_1', 'images/items/chest.png', 'item_13', 1, 0.5),
-                ('chest_1', 'images/items/chest.png', 'crystal', 10, 1),
-                ('chest_1', 'images/items/chest.png', 'crystal_fragments', 120, 20)
-            ]
-
-        for item in items:
-            request = 'INSERT INTO chest VALUES('
-            for val in item:
-                request += '"{}",'.format(val)
-            request = request[:-1] + ')'
-            self.cur.execute(request)
-        self.commit()
-
-    def insert_characters_levels(self):
-
-        if not self.table_is_empty('characters_levels'):
-            return
-
-        characters = ['knight', 'fairy', 'spongebob']
-
-        for ch in characters:
-            m = 10
-            for i in range(100):
-                m += 2
-                request = 'INSERT INTO characters_levels VALUES("{}","{}","{}")'.format(ch, i, i * m)
-                self.cur.execute(request)
-        self.commit()
-
-    def insert_characters_or_skills(self, table='characters_skills'):
-
-        if table == 'characters' and self.table_is_empty('characters'):
-            characters = (['knight', 'images/characters/knight_available.png',
-                           'images/characters/knight_not_available.png', 0, 0, 1, 1, 1],
-                          ['fairy', 'images/characters/fairy_available.png',
-                           'images/characters/fairy_not_available.png', 0, 0, 1, 1, 0],
-                          ['spongebob', 'images/characters/spongebob_available.png',
-                           'images/characters/spongebob_not_available.png', 0, 0, 1, 0, 0]
-                          )
-            for ch in characters:
-                request = 'INSERT INTO characters VALUES('
-                for val in ch:
-                    request += '"{}",'.format(val)
-                request = request[:-1] + ')'
-
-                self.cur.execute(request)
-
-                self.set_characters_exp(ch[0], 0)
-        elif table == 'characters_skills':
-            if self.table_is_empty('characters_skills'):
-                for ch in ['knight', 'fairy', 'spongebob']:
-                    if ch == 'knight':
-                        for i in range(5):
-                            unblock = 1 if i == 0 else 1
-                            request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")' \
-                                .format(ch, 'bomb_{}'.format(i + 1), 'images/skills/bomb_{}.png'.format(i + 1), 1, 3,
-                                        unblock, 10)
-                            self.cur.execute(request)
-                    elif ch == 'fairy':
-                        request = 'INSERT INTO characters_skills VALUES("{}","{}","{}","{}","{}","{}","{}")' \
-                            .format(ch, 'destroy_color', 'images/skills/destroy_color.png', 1, 3, 1, 50)
-                        self.cur.execute(request)
+        for key in self.dict_exel.keys():
+            if self.table_is_empty(key):
+                for string in self.dict_exel[key]:
+                    request = 'INSERT INTO {} VALUES('.format(key)
+                    for val in string:
+                        request += '"{}",'.format(val)
+                    request = request[:-1] + ')'
+                    self.cur.execute(request)
 
         self.commit()
 
-    def get_current_character(self):
-        self.cur.execute('SELECT * FROM characters WHERE character = '
-                         '(SELECT value FROM global WHERE key = "current_character")')
-        character = self.cur.fetchall()[0]
+    def get_current_manuscript(self):
+        self.cur.execute('SELECT * FROM manuscripts WHERE id = '
+                         '(SELECT value FROM global WHERE key = "current_manuscript")')
+        manuscript = self.cur.fetchall()[0]
 
-        return character
+        return manuscript
 
-    def get_levels_settings(self, location=None):
-        self.cur.execute('SELECT * FROM levels_settings WHERE location = "{}"'.format(location))
+    def get_lvl_settings(self, loc_id=None):
+        self.cur.execute('SELECT lvl_settings.*, lvl_settings_lang.name FROM lvl_settings INNER JOIN lvl_settings_lang '
+                         'ON lvl_settings.id = lvl_settings_lang.id AND lvl_settings.loc_id = lvl_settings_lang.loc_id '
+                         'WHERE lvl_settings.loc_id = "{0}" '
+                         'AND lvl_settings_lang.lang = "{1}"'.format(loc_id, global_variables.LANGUAGE))
         return self.cur.fetchall()
 
-    def get_current_result(self, location, level, scores):
-        request = 'SELECT difficult, exp, crystal_fragments FROM levels WHERE location = "{0}" ' \
-                  'AND level = "{1}" AND scores = (SELECT MAX(scores) FROM levels WHERE ' \
-                  'location = "{2}" AND level = "{3}" AND scores <= "{4}")' \
-            .format(location, level, location, level, scores)
+    def get_current_result(self, loc_id, lvl_id, scores):
+        request = 'SELECT difficult, exp, gold FROM levels WHERE loc_id = "{0}" ' \
+                  'AND lvl_id = "{1}" AND scores = (SELECT MAX(scores) FROM levels WHERE ' \
+                  'loc_id = "{2}" AND lvl_id = "{3}" AND scores <= "{4}")' \
+            .format(loc_id, lvl_id, loc_id, lvl_id, scores)
 
         self.cur.execute(request)
         result = self.cur.fetchall()
@@ -471,131 +233,202 @@ class Database(object):
             result = [0, 0, 0]
         return result
 
-    def get_past_result(self, location, level):
-        request = 'SELECT exp, crystal_fragments, stars FROM completed_levels WHERE location = "{0}" ' \
-                  'AND level = "{1}"'.format(location, level)
+    def get_past_result(self, loc_id, lvl_id):
+
+        if lvl_id < 0:  # тогда чекаем ласт уровень прошлой игры
+            request = 'SELECT stars, exp, gold FROM completed_levels WHERE loc_id = "{0}" ' \
+                      'AND lvl_id = (SELECT MAX(id) FROM lvl_settings WHERE loc_id = "{0}")'\
+                .format(loc_id-1)
+        else:
+            request = 'SELECT stars, exp, gold FROM completed_levels WHERE loc_id = "{0}" ' \
+                      'AND lvl_id = "{1}"'.format(loc_id, lvl_id)
 
         self.cur.execute(request)
         result = self.cur.fetchall()
         if result:
-            r = [0]
-            r.extend(result[0])
-            result = r
+            result = result[0]
         else:
-            result = [0, 0, 0, -1]
+            result = [-1, 0, 0]
         return result
 
-    def get_skills(self, character):
-        request = 'SELECT * FROM characters_skills WHERE character = "{}"'.format(character)
+    def is_opened_mine_location(self, lvl_id):
+        request = 'SELECT stars, exp, gold FROM completed_levels WHERE loc_id = "{0}" ' \
+                  'AND lvl_id = (SELECT MAX(id) FROM lvl_settings WHERE loc_id = "{0}")' \
+            .format(lvl_id - 1)
+
+        self.cur.execute(request)
+
+        if self.cur.fetchall():
+            return True
+        else:
+            return False
+
+    def get_skills(self, manuscript_id):
+        request = 'SELECT * FROM skills WHERE manuscript_id = "{}"'.format(manuscript_id)
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
 
     def get_items(self):
-        request = 'SELECT * FROM inventory'
+        request = 'SELECT items_and_resources.*, items_and_resources_lang.name, items_and_resources_lang.description ' \
+                  'FROM items_and_resources JOIN items_and_resources_lang ' \
+                  'ON items_and_resources.id = items_and_resources_lang.id WHERE items_and_resources_lang.lang = "{}"'\
+            .format(global_variables.LANGUAGE)
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
 
-    def get_items_for_chest(self, chest='chest_1'):
-        request = 'SELECT chest.*, inventory.image FROM chest LEFT OUTER JOIN inventory ON chest.item_id' \
-                  ' = inventory.item WHERE chest.chest = "{}"'.format(chest)
+    def get_items_for_chest(self, chest_id=0):
+        request = 'SELECT chests.item_id, chests.quantity, chests.probability, items_and_resources.image ' \
+                  'FROM chests LEFT OUTER JOIN items_and_resources ' \
+                  'ON chests.item_id = items_and_resources.id WHERE chests.id = "{}"'.format(chest_id)
         self.cur.execute(request)
 
         result = list(self.cur.fetchall())
 
-        items = [((x[2], x[3], x[5]), x[4]) for x in result]
+        items = [((x[0], x[1], x[3]), x[2]) for x in result]
 
         return items
 
-    def get_characters(self):
-        request = 'SELECT * FROM characters'
+    def get_levels_colors_bonuses(self, loc_id, lvl_id):
+        request = 'SELECT colors.r, colors.g, colors.b, colors.a, ' \
+                  'SUM(items_and_resources.lvl) FROM game_bonuses ' \
+                  'LEFT JOIN items_and_resources ON game_bonuses.bonus_item_id = items_and_resources.id ' \
+                  'LEFT JOIN colors ON game_bonuses.object_id = colors.id ' \
+                  'WHERE game_bonuses.object_id IN ' \
+                  '(SELECT color_id FROM level_colors WHERE loc_id = "{}" AND lvl_id = "{}")' \
+                  'GROUP BY colors.r, colors.g, colors.b, colors.a'\
+                  .format(loc_id, lvl_id)
+
+        self.cur.execute(request)
+
+        dict_colors = dict()
+        for string in self.cur.fetchall():
+            dict_colors.update({tuple([string[0], string[1], string[2], string[3]]): string[4]})
+
+        return dict_colors
+
+    def get_manuscripts(self):
+        request = 'SELECT * FROM manuscripts'
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
 
-    def get_levels(self, location, is_completed="1"):
-        request = 'SELECT level FROM levels WHERE location = "{}" AND is_completed = "{}"'.format(location,
-                                                                                                  is_completed)
+    def get_levels(self, loc_id, is_completed="1"):
+        request = 'SELECT lvl_id FROM levels WHERE loc_id = "{}" AND is_completed = "{}"'.format(loc_id, is_completed)
         self.cur.execute(request)
         return [x[0] for x in self.cur.fetchall()]
 
-    def get_character_level_info(self, character):
-        request = 'SELECT character_level, exp, exp_for_next_level FROM characters WHERE character = "{}"'.format(
-            character)
+    def get_manuscript_lvl_info(self, manuscript_id):
+        request = 'SELECT lvl, exp, exp_for_lvl FROM for_up_lvl WHERE lvl = "{}", object_type = "manuscript"'\
+            .format(manuscript_id)
+
         self.cur.execute(request)
         return self.cur.fetchall()[0]
 
     def get_resources(self):
-        self.cur.execute('SELECT value FROM global WHERE key = "crystal"')
+        self.cur.execute('SELECT qty FROM items_and_resources WHERE object_type = "crystal"')
         crystal = self.cur.fetchall()[0][0]
 
-        self.cur.execute('SELECT value FROM global WHERE key = "crystal_fragments"')
-        crystal_fragments = self.cur.fetchall()[0][0]
+        self.cur.execute('SELECT qty FROM items_and_resources WHERE object_type = "gold"')
+        gold = self.cur.fetchall()[0][0]
 
-        return [crystal, crystal_fragments]
+        return [crystal, gold]
 
-    def get_skill_price(self, skill_name):
-        self.cur.execute('SELECT crystal_fragments_cost FROM characters_skills WHERE skill = "{}"'.format(skill_name))
+    def get_skill_price(self, skill_id):
+        self.cur.execute('SELECT cost FROM skills WHERE id = "{}"'.format(skill_id))
         return self.cur.fetchall()[0][0]
 
-    def get_scores_for_stars(self, location, level):
-        self.cur.execute('SELECT scores FROM levels WHERE location = "{}" AND level = "{}"'.format(location, level))
+    def get_scores_for_stars(self, loc_id, lvl_id):
+        self.cur.execute('SELECT scores FROM levels WHERE loc_id = "{}" AND lvl_id = "{}"'.format(loc_id, lvl_id))
         return [x[0] for x in self.cur.fetchall()]
 
-    def set_crystal_fragments(self, crystal_fragments):
-        self.cur.execute(
-            'UPDATE global SET value = value + "{}" WHERE key = "crystal_fragments"'.format(crystal_fragments))
-        Clock.schedule_once(self.commit)
+    def get_actions(self, loc_id=-1, lvl_id=-1, action_id=-1, action_type=None):
 
-    def set_skill_quantity(self, skill_name, quantity):
-        self.cur.execute('UPDATE characters_skills SET quantity = "{}" WHERE skill = "{}"'.format(quantity, skill_name))
-        Clock.schedule_once(self.commit)
-
-    def set_items_qty_change(self, item_id, qty):
-        if (item_id == 'crystal') or (item_id == 'crystal_fragments'):
-            self.cur.execute(
-                'UPDATE global SET value = value + {} WHERE key = "{}"'.format(int(qty), item_id))
+        if loc_id != -1 and lvl_id != -1:
+            request = 'SELECT id, action_type, object_id FROM actions ' \
+                      'WHERE loc_id = "{}" AND lvl_id = "{}" AND is_completed = "0"'.format(loc_id, lvl_id)
         else:
-            self.cur.execute('UPDATE inventory SET quantity = quantity + {} WHERE item = "{}"'.format(int(qty), item_id))
+            request = ''  # stub
+
+        self.cur.execute(request)
+
+        return self.cur.fetchall()
+
+    def change_actions_completed(self, action_ids, is_completed=1):
+        if action_ids:
+            request = 'UPDATE actions SET is_completed = "{}" WHERE id IN ('.format(is_completed)
+            for action in action_ids:
+                request += '"{}",'.format(action)
+            request = request[:-1] + ')'
+            self.cur.execute(request)
+            self.commit()
+
+    def set_skill_quantity(self, skill_id, quantity):
+        self.cur.execute('UPDATE skills SET quantity = "{}" WHERE id = "{}"'.format(quantity, skill_id))
+        Clock.schedule_once(self.commit)
+
+    def change_items_qty(self, qty, item_id=None, object_type=None):
+
+        if item_id is not None:
+            self.cur.execute('UPDATE items_and_resources SET qty = qty + {} WHERE id = "{}"'
+                             .format(int(qty), item_id))
+
+        elif object_type is not None:
+            self.cur.execute('UPDATE items_and_resources SET qty = qty + {} WHERE object_type = "{}"'
+                             .format(int(qty), object_type))
+        else:
+            return
+
         self.commit()
 
-    def set_current_character(self, character_name):
-        self.cur.execute('UPDATE global SET value = "{}" WHERE key = "current_character"'.format(character_name))
+    def set_current_manuscript(self, character_id):
+        self.cur.execute('UPDATE global SET value = "{}" WHERE key = "current_manuscript"'.format(character_id))
         Clock.schedule_once(self.commit)
 
-    def set_completed_level(self, location, level, is_completed="1"):
-        self.cur.execute('UPDATE levels SET is_completed = "{}" WHERE location = "{}" AND level = "{}"'
-                         .format(is_completed, location, level))
+    def set_completed_level(self, loc_id, lvl_id, is_completed="1"):
+        self.cur.execute('UPDATE levels SET is_completed = "{}" WHERE loc_id = "{}" AND lvl_id = "{}"'
+                         .format(is_completed, loc_id, lvl_id))
         Clock.schedule_once(self.commit)
 
-    def set_current_result(self, location, level, exp, cf, stars):
+    def set_current_result(self, loc_id, lvl_id, exp, gold, stars):
         self.cur.execute(
-            'SELECT COUNT() FROM completed_levels WHERE location = "{}" AND level = "{}"'.format(location, level))
+            'SELECT COUNT() FROM completed_levels WHERE loc_id = "{}" AND lvl_id = "{}"'.format(loc_id, lvl_id))
 
         if self.cur.fetchall()[0][0] == 0:
             request = 'INSERT INTO completed_levels VALUES("{}","{}","{}","{}","{}")' \
-                .format(location, level, exp, cf, stars)
+                .format(loc_id, lvl_id, exp, gold, stars)
         else:
-            request = 'UPDATE completed_levels SET exp = "{}", crystal_fragments = "{}", stars = "{}" WHERE ' \
-                      'location = "{}" AND level = "{}"'.format(exp, cf, stars, location, level)
+            request = 'UPDATE completed_levels SET exp = "{}", gold = "{}", stars = "{}" WHERE ' \
+                      'loc_id = "{}" AND lvl_id = "{}"'.format(exp, gold, stars, loc_id, lvl_id)
 
         self.cur.execute(request)
 
         Clock.schedule_once(self.commit)
 
-    def set_characters_exp(self, character, additional_exp):
-        self.cur.execute('SELECT exp FROM characters WHERE character = "{}"'.format(character))
+    def unblock_skill(self, skill_id):
+        request = 'UPDATE skills SET is_unblock = "1" WHERE id = "{}"'.format(skill_id)
+        self.cur.execute(request)
+        Clock.schedule_once(self.commit)
+
+    def unblock_manuscript(self, manuscript_id):
+        request = 'UPDATE manuscripts SET is_available = "1" WHERE id = "{}"'.format(manuscript_id)
+        self.cur.execute(request)
+        Clock.schedule_once(self.commit)
+
+    def set_manuscript_exp(self, manuscript_id, additional_exp):
+        self.cur.execute('SELECT exp FROM manuscripts WHERE id = "{}"'.format(manuscript_id))
         exp = self.cur.fetchall()[0][0] + additional_exp
 
-        request = 'SELECT character_level FROM characters_levels WHERE character = "{}" ' \
-                  'AND exp_for_level = (SELECT MAX(exp_for_level) FROM characters_levels WHERE character = "{}" ' \
-                  'AND exp_for_level <= "{}")'.format(character, character, exp)
+        request = 'SELECT lvl FROM for_up_lvl WHERE object_id = "{}" AND object_type = "manuscript" ' \
+                  'AND exp_for_lvl = (SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" ' \
+                  'AND object_type = "manuscript" AND exp_for_lvl <= "{}")'.format(manuscript_id, manuscript_id, exp)
         self.cur.execute(request)
         level = self.cur.fetchall()[0][0]
 
         # for max lvl
-        request = 'SELECT MAX(exp_for_level) FROM characters_levels WHERE character = "{}"'.format(character)
+        request = 'SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" AND object_type = "manuscript"'\
+            .format(manuscript_id)
         self.cur.execute(request)
         max_exp = self.cur.fetchall()[0][0]
 
@@ -603,13 +436,48 @@ class Database(object):
             exp = max_exp
             exp_for_next_level = max_exp
         else:
-            request = 'SELECT MIN(exp_for_level) FROM characters_levels WHERE character = "{}" ' \
-                      'AND exp_for_level > "{}"'.format(character, exp)
+            request = 'SELECT MIN(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" ' \
+                      'AND object_type = "manuscript" AND exp_for_lvl > "{}"'.format(manuscript_id, exp)
             self.cur.execute(request)
             exp_for_next_level = self.cur.fetchall()[0][0]
 
-        request = 'UPDATE characters SET exp = "{}", character_level = "{}", exp_for_next_level = "{}" ' \
-                  'WHERE character = "{}"'.format(exp, level, exp_for_next_level, character)
+        request = 'UPDATE manuscripts SET exp = "{}", lvl = "{}", exp_for_next_lvl = "{}" ' \
+                  'WHERE id = "{}"'.format(exp, level, exp_for_next_level, manuscript_id)
+        self.cur.execute(request)
+
+        Clock.schedule_once(self.commit)
+
+    def set_item_lvl(self, item_id):
+        self.cur.execute('SELECT qty, object_type FROM items_and_resources WHERE id = "{}"'.format(item_id))
+        result = self.cur.fetchall()[0]
+        qty, object_type = result[0], result[1]
+
+        if object_type != 'item':
+            return
+
+        request = 'SELECT lvl FROM for_up_lvl WHERE object_id = "{0}" AND object_type = "item" ' \
+                  'AND exp_for_lvl = (SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{0}" ' \
+                  'AND object_type = "item" AND exp_for_lvl <= "{1}")'.format(item_id, qty)
+        self.cur.execute(request)
+        level = self.cur.fetchall()[0][0]
+
+        # for max lvl
+        request = 'SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" AND object_type = "item"'\
+            .format(item_id)
+        self.cur.execute(request)
+        max_qty = self.cur.fetchall()[0][0]
+
+        if qty >= max_qty:  # for max lvl
+            qty = max_qty
+            qty_for_next_level = max_qty
+        else:
+            request = 'SELECT MIN(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" ' \
+                      'AND object_type = "item" AND exp_for_lvl > "{}"'.format(item_id, qty)
+            self.cur.execute(request)
+            qty_for_next_level = self.cur.fetchall()[0][0]
+
+        request = 'UPDATE items_and_resources SET lvl = "{}", qty_for_next_lvl = "{}" ' \
+                  'WHERE id = "{}"'.format(level, qty_for_next_level, item_id)
         self.cur.execute(request)
 
         Clock.schedule_once(self.commit)

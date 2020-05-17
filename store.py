@@ -15,16 +15,15 @@ class Store(ModalView):
         super(Store, self).__init__(**kwargs)
 
         self.ids.character.skills = self.ids.skills
-        self.ids.character.character_changer.change_character(self.ids.character)
+        self.ids.character.manuscript_changer.change_character(self.ids.character)
 
     def on_pre_open(self):
         self.calculate_resources()
 
     def calculate_resources(self):
-        self.crystal, self.crystal_fragments = db.get_resources()
+        self.crystal, self.gold = db.get_resources()
 
-    def give_crystal_fragments_test(self):
-        db.set_crystal_fragments(500)
+    def give_gold_test(self):
         self.calculate_resources()
 
 
@@ -33,18 +32,18 @@ class CharacterShop(Button):
     def __init__(self, **kwargs):
         super(CharacterShop, self).__init__(**kwargs)
 
-        self.character_changer = CharacterChangerShop()
-        self.character_changer.character = self
+        self.manuscript_changer = CharacterChangerShop()
+        self.manuscript_changer.character = self
         self.skills = ObjectProperty
-        character = db.get_current_character()
-        self.name = character[0]
-        self.background_normal = character[1] if character[6] == '1' else character[2]
+        manuscript = db.get_current_manuscript()
+        self.name = manuscript[0]
+        self.background_normal = manuscript[1] if manuscript[6] == '1' else manuscript[2]
         self.background_down = self.background_normal
-        self.available = True if character[6] == '1' else False
+        self.available = True if manuscript[6] == '1' else False
 
     def open_character_changer(self):
-        self.character_changer.character = self
-        self.character_changer.open()
+        self.manuscript_changer.character = self
+        self.manuscript_changer.open()
 
 
 class CharacterChangerShop(ModalView):
@@ -118,11 +117,11 @@ class Deal(ModalView):
         self.price = int(db.get_skill_price(self.skill_shop.name))
 
     def make_dial(self, extra_quantity):
-        if extra_quantity * self.price > store.crystal_fragments:
+        if extra_quantity * self.price > store.gold:
             return
 
         self.skill_shop.quantity += extra_quantity
-        db.set_crystal_fragments((extra_quantity * self.price) * (- 1))
+        db.set_gold((extra_quantity * self.price) * (- 1))
         db.set_skill_quantity(self.skill_shop.name, self.skill_shop.quantity)
 
         store.calculate_resources()
