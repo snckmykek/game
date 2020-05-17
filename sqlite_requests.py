@@ -1,6 +1,6 @@
 import sqlite3
 from kivy.clock import Clock
-import xlrd
+# import xlrd
 import global_variables
 
 
@@ -23,20 +23,21 @@ class Database(object):
         self.con.close()
 
     def read_exel(self):
-        wb = xlrd.open_workbook('start_db.xlsx')
-        for name in wb.sheet_names():
-            self.dict_exel.update({name: list()})
-
-            sheet = wb.sheet_by_name(name)
-
-            for nrow in range(sheet.nrows):
-                if nrow == 0:
-                    continue
-                row = list()
-                for ncol in range(sheet.ncols):
-                    row.append(sheet.cell_value(nrow, ncol))
-
-                self.dict_exel[name].append(row)
+        pass
+        # wb = xlrd.open_workbook('start_db.xlsx')
+        # for name in wb.sheet_names():
+        #     self.dict_exel.update({name: list()})
+        #
+        #     sheet = wb.sheet_by_name(name)
+        #
+        #     for nrow in range(sheet.nrows):
+        #         if nrow == 0:
+        #             continue
+        #         row = list()
+        #         for ncol in range(sheet.ncols):
+        #             row.append(sheet.cell_value(nrow, ncol))
+        #
+        #         self.dict_exel[name].append(row)
 
     def sqlite_create_db(self):
         self.cur.execute('CREATE TABLE IF NOT EXISTS global('
