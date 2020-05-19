@@ -11,6 +11,7 @@ from kivy.animation import Animation
 import random
 from treasure_chest.main import TreasureChest
 from inventory.main import Inventory
+from store.main import storescreen as store
 
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
@@ -79,6 +80,7 @@ class WorldMap(ModalView):
 
         self.cubes_game = CubesGame()
         self.inventory = Inventory()
+        self.screenstore = store
         self.world_map = self.ids.world_map
         self.coords = tuple()
         self.locations = locations
@@ -134,8 +136,10 @@ class WorldMap(ModalView):
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],
                                  on_press=self.open_close_menu, pos=[WINDOW.width * .85, WINDOW.height * .4])
         button.parameter = 'shop'
+        button.text = 'shop'
         button.background_normal = 'images/maps/menu_buttons/shop_menu_button.png'
         button.background_down = 'images/maps/menu_buttons/shop_menu_button_down.png'
+        button.bind(on_release=self.screenstore.open)
         self.menu_buttons.append(button)
 
         button = ParameterButton(text='', size_hint=(None, None), size=[0, 0],

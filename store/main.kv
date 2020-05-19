@@ -1,0 +1,113 @@
+#:import WINDOW global_variables.WINDOW
+
+<StoreScreen>:
+    total_price: 0
+    BoxLayout:
+        orientation: 'vertical'
+
+        BoxLayout:
+            size_hint_y: .1
+            Label:
+                text: str(root.total_price)
+
+        TabbedPanel:
+            id: tab_panel
+            size_hint_y: .8
+            tab_width: self.width / 2
+            do_default_tab: False
+            on_current_tab: root.refresh_shop()
+            TabbedPanelItem:
+                id: gold
+                text: ''
+                ScrollView:
+                    ShopItemsField:
+                        id: money_items
+            TabbedPanelItem:
+                id: crystal
+                text: ''
+                ScrollView:
+                    ShopItemsField:
+                        id: crystal_items
+
+        BoxLayout:
+            size_hint_y: .1
+            Button:
+                text: 'Back'
+                on_release: root.dismiss()
+            Button:
+                text: 'Buy'
+                on_release: root.buy_items()
+
+
+<ShopItemsField@GridLayout>:
+    size_hint_y: None
+    height: self.minimum_height
+    cols: 1
+    spacing: WINDOW.height/60
+
+
+<ShopItemBox>:
+    item_id: 0
+    description: ''
+    size_hint_y: None
+    height: WINDOW.height/10
+    canvas.before:
+        Color:
+            rgba: (1, 1, 1, .1)
+        Rectangle:
+            source:  'images/shop/fon2.png'
+            size: self.size
+            pos: self.pos
+    BoxLayout:
+        size_hint_x: .65
+        ShopItem:
+            id: item_button
+        BoxLayout:
+#            size_hint_x: None
+#            width: root.width/2 - item_button.width
+            size_hint_x: .65
+            Label:
+                id: item_qty
+                text: '0'
+                text_size: self.size
+                halign: 'right'
+                valign: 'middle'
+            Label:
+                id: slash
+                size_hint_x: None
+                size: [self.texture_size[0] + WINDOW.height/60, self.texture_size[1] + WINDOW.height/60]
+                text: '/'
+            Label:
+                id: item_max_qty
+                text: '10'
+                text_size: self.size
+                halign: 'left'
+                valign: 'middle'
+        BoxLayout:
+            size_hint_x: .35
+            Label:
+                id: cost
+    BoxLayout:
+        size_hint_x: .35
+        Button:
+            border: [0, 0, 0, 0]
+            background_normal: 'images/shop/minus.png'
+            on_press: root.change_qty_for_buy(-1)
+        Label:
+            id: qty_for_buy
+            qty: 0
+            text: str(self.qty)
+        Button:
+            border: [0, 0, 0, 0]
+            background_normal: 'images/shop/plus.png'
+            on_press: root.change_qty_for_buy(+1)
+
+
+<ShopItem>:
+    name: ''
+    item_id: 0
+    description: ''
+    image: ''
+    size_hint_x: None
+    width: self.height
+    border: [0, 0, 0, 0]

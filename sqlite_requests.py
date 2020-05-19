@@ -1,6 +1,6 @@
 import sqlite3
 from kivy.clock import Clock
-# import xlrd
+import xlrd
 import global_variables
 
 
@@ -9,35 +9,34 @@ class Database(object):
     def __init__(self):
         self.con = sqlite3.connect('database_cubes.db')
         self.cur = self.con.cursor()
-        # self.dict_exel = dict()
-        # self.read_exel()
-        # self.sqlite_create_db()
-        # self.insert_data()
-        #
-        # for item in self.get_items():
-        #     if item[7] == 0:
-        #         self.set_item_lvl(item[0])
+        self.dict_exel = dict()
+        self.read_exel()
+        self.sqlite_create_db()
+        self.insert_data()
+
+        for item in self.get_items():
+            if item[7] == 0:
+                self.set_item_lvl(item[0])
 
     def close(self):
         self.cur.close()
         self.con.close()
 
     def read_exel(self):
-        pass
-        # wb = xlrd.open_workbook('start_db.xlsx')
-        # for name in wb.sheet_names():
-        #     self.dict_exel.update({name: list()})
-        #
-        #     sheet = wb.sheet_by_name(name)
-        #
-        #     for nrow in range(sheet.nrows):
-        #         if nrow == 0:
-        #             continue
-        #         row = list()
-        #         for ncol in range(sheet.ncols):
-        #             row.append(sheet.cell_value(nrow, ncol))
-        #
-        #         self.dict_exel[name].append(row)
+        wb = xlrd.open_workbook('start_db.xlsx')
+        for name in wb.sheet_names():
+            self.dict_exel.update({name: list()})
+
+            sheet = wb.sheet_by_name(name)
+
+            for nrow in range(sheet.nrows):
+                if nrow == 0:
+                    continue
+                row = list()
+                for ncol in range(sheet.ncols):
+                    row.append(sheet.cell_value(nrow, ncol))
+
+                self.dict_exel[name].append(row)
 
     def sqlite_create_db(self):
         self.cur.execute('CREATE TABLE IF NOT EXISTS global('
@@ -101,6 +100,7 @@ class Database(object):
         self.cur.execute('CREATE TABLE IF NOT EXISTS skills_lang('
                          'id INTEGER,'
                          'name TEXT,'
+                         'description TEXT,'
                          'lang TEXT)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS for_up_lvl('
@@ -264,8 +264,14 @@ class Database(object):
         else:
             return False
 
-    def get_skills(self, manuscript_id):
-        request = 'SELECT * FROM skills WHERE manuscript_id = "{}"'.format(manuscript_id)
+    def get_skills(self, manuscript_id=None):
+        if manuscript_id is None:
+            request = 'SELECT skills.*, skills_lang.name, skills_lang.description FROM skills JOIN skills_lang ' \
+                      'ON skills.id = skills_lang.id WHERE skills_lang.lang = "{}"'.format(global_variables.LANGUAGE)
+        else:
+            request = 'SELECT skills.*, skills_lang.name, skills_lang.description FROM skills JOIN skills_lang ' \
+                      'ON skills.id = skills_lang.id WHERE skills.manuscript_id = "{}" AND skills_lang.lang = "{}"'\
+                    .format(manuscript_id, global_variables.LANGUAGE)
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
@@ -365,8 +371,8 @@ class Database(object):
             self.cur.execute(request)
             self.commit()
 
-    def set_skill_quantity(self, skill_id, quantity):
-        self.cur.execute('UPDATE skills SET quantity = "{}" WHERE id = "{}"'.format(quantity, skill_id))
+    def change_skill_quantity(self, skill_id, quantity):
+        self.cur.execute('UPDATE skills SET quantity = quantity + {} WHERE id = "{}"'.format(quantity, skill_id))
         Clock.schedule_once(self.commit)
 
     def change_items_qty(self, qty, item_id=None, object_type=None):

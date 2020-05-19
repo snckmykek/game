@@ -10,7 +10,6 @@ from kivy.properties import NumericProperty
 from kivy.clock import Clock
 from global_variables import WINDOW
 from sqlite_requests import db
-from store import store
 from cubes_game.animatoins import do_animation
 
 from dialog.main import dialog
@@ -31,7 +30,6 @@ class CubesGame(ModalView):
 
         self.ge = GameEnding()
         self.dialog = dialog
-        self.store = store
 
         self.world_map = ObjectProperty
         self.current_level = ObjectProperty
@@ -99,7 +97,7 @@ class CubesGame(ModalView):
         self.dialog.open()
 
     def open_shop(self):
-        self.store.open()
+        pass
 
     def on_pre_dismiss(self):
         self.world_map.open_location(self.current_location)
@@ -729,7 +727,7 @@ class Skill(ToggleButton):
 
     def skill_is_activated(self):
         self.quantity -= 1
-        db.set_skill_quantity(self.skill_id, self.quantity)
+        db.change_skill_quantity(self.skill_id, -1)
 
         if self.quantity <= 0:
             self.state = 'normal'
