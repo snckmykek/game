@@ -11,12 +11,15 @@ Config.set('graphics', 'height', '640')
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.lang.builder import Builder
+from kivy.animation import Animation
 
 from home.main import Home
 from dialog.main import dialog
 from speech_parser import speech_parser
 from sqlite_requests import db
-
+from common_module import game_action
+from miniature.main import miniature
+from kivy.clock import Clock
 
 speech_parser()
 
@@ -31,16 +34,22 @@ class Menu(BoxLayout):
         self.home = Home
         self.dialog = dialog
 
+        Clock.schedule_once(self.check_actions)
+
+    def check_actions(self, d):
+        current_loc_id = db.get_val_from_global('current_loc_id')
+        current_lvl_id = db.get_val_from_global('current_lvl_id')
+        game_action.execute_action('menu', current_loc_id, current_lvl_id)
+
     def play(self):
         self.home.open()
 
     def open_dialog(self):
-        self.dialog.location = 'Первая'
-        self.dialog.level = '-1'
         self.dialog.open()
 
     def delete_table(self, table='speech'):
-        db.delete_table(table)
+        miniature.open()
+
 
 class CubesApp(App):
 

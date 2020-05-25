@@ -1,4 +1,5 @@
 from kivy.core.window import Window
+from sqlite_requests import db
 
 
 # User
@@ -60,5 +61,3 @@ class CommonButton:
 WINDOW = WindowSettings()
 LEVELBUTTON = LevelButton()
 COMMONBUTTON = CommonButton()
-FIRSTSHARDS = 10
-LANGUAGE = 'ru'

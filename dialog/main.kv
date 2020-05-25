@@ -1,80 +1,86 @@
 #:import WINDOW global_variables.WINDOW
-#:import COMMONBUTTON global_variables.COMMONBUTTON
-
-
-<PlayerSpeechButton>:
-    color: (1, .5, 0, 1)
-    background_normal:''
-    background_color: (.30, .12, .03, 1)
-    padding: [WINDOW.width / 40, WINDOW.width / 40]
-    size_hint_y: None
-    text_size: self.width, None
-    height: self.texture_size[1] + WINDOW.width / 60
-
 
 <Dialog>:
-    size_hint: .8, .8
-    background_normal: ''
+    background_color: (1, 1, 1, .5)
+#    background:
     BoxLayout:
         orientation: 'vertical'
-        canvas:
-            Color:
-                rgba: (.28, .17, .05, 1)
-            Rectangle:
-                size: self.size
-                pos: self.pos
         BoxLayout:
-            id: content_box
-            orientation: 'vertical'
-            size_hint_y: .9
-            BoxLayout:
-                orientation: 'vertical'
-                BoxLayout:
-                    size_hint_y: .3
-                    canvas.before:
-                        Color:
-                            rgba: (.36, .17, .05, 1)
-                        Rectangle:
-                            size: self.size
-                            pos: self.pos
-                ScrollView:
-                    size_hint_y: .7
-                    Label:
-                        id: npc_speech
-                        size_hint_y: None
-                        text_size: self.width, None
-                        height: self.texture_size[1]
-                        color: (.98, .49, 0, 1)
-                        multiline: True
-                        padding: (WINDOW.width/40, WINDOW.width/40)
-                        halign: 'left'
-                        valign: 'middle'
-            ScrollView:
+            size_hint_y: .2
+            Widget:
+            Label:
+                id: left_speaker
+                size_hint_x: None
+                width: self.height
+                speaker_image: 'images/heroes/hero.png'
                 canvas.before:
-                    Color:
-                        rgba: (.36, .17, .05, 1)
                     Rectangle:
                         size: self.size
                         pos: self.pos
+                        source: self.speaker_image
+            Widget:
+            Label:
+                id: right_speaker
+                size_hint_x: None
+                width: self.height
+                speaker_image: 'images/heroes/companion.png'
+                canvas.before:
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                        source: self.speaker_image
+            Widget:
+        BoxLayout:
+            size_hint_y: .7
+            padding: [0, 0]
+            ScrollView:
+                scroll_y: 0
+                on_touch_down: root.set_stop()
+                canvas.before:
+                    Rectangle:
+                        size: self.size[0], self.size[1] + 10
+                        pos: self.pos[0], self.pos[1] - 5
+                        source: 'images/dialogs_field.png'
                 GridLayout:
-                    id: player_speech_box
+                    id: speech_list_field
                     size_hint_y: None
                     height: self.minimum_height
                     cols: 1
-                    orientation: 'vertical'
-                    spacing: WINDOW.width / 40
-                    padding: [WINDOW.width / 40, WINDOW.width / 40]
+                    padding: [20, 20]
+                    spacing: 5
         BoxLayout:
             size_hint_y: .1
+            padding: 5
             Button:
-                text: 'Clear (test)'
-                color: (1, .5, 0, 1)
-                background_normal: ''
-                background_color: (.30, .12, .03, 1)
-                on_press: root.clear_db()
-            Button:
-                text: 'Close'
-                color: (1, .5, 0, 1)
-                background_normal: ''
-                background_color: (.30, .12, .03, 1)
-                on_press: root.dismiss()
+                background_normal: 'images/button_dialog.png'
+                border: [0, 0, 0, 0]
+                text: 'close'
+                on_release: root.deferred_dismiss()
+
+
+<SpeechBox>:
+    size_hint_indent_left: .3
+    size_hint_indent_right: .0
+    size_hint_y: None
+    height: current_text.height
+    Widget:
+        size_hint_x: root.size_hint_indent_left
+    Label:
+        id: current_text
+        size_hint_y: None
+        multiline: True
+        color: (0, 0, 0, 1)
+        text_size: self.width*.8, None
+        height: self.texture_size[1] + 5
+        halign: 'left'
+        valign: 'middle'
+        text: ''
+        canvas.before:
+            Color:
+                rgba: (.0, .0, .0, .1)
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: [15, ]
+    Widget:
+        size_hint_x: root.size_hint_indent_right

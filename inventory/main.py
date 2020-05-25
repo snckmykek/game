@@ -8,27 +8,12 @@ from kivy.lang.builder import Builder
 from kivy.properties import ObjectProperty
 from kivy.properties import NumericProperty
 from kivy.clock import Clock
-from global_variables import WINDOW, FIRSTSHARDS
+from global_variables import WINDOW
 from sqlite_requests import db
 from treasure_chest.main import TreasureChest
 import random
 
 Builder.load_file(r'inventory/main.kv')
-
-
-def get_qty_shards(qty=0):
-    item_max_qty = FIRSTSHARDS
-
-    item_level = 0
-    item_qty = 0
-
-    for i in range(qty):
-        item_qty += 1
-        if item_qty == item_max_qty:
-            item_level += 1
-            item_max_qty *= 2
-
-    return {'item_level': item_level, 'item_qty': item_qty, 'item_max_qty': item_max_qty}
 
 
 class Inventory(ModalView):

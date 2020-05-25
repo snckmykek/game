@@ -11,6 +11,7 @@ from kivy.clock import Clock
 from global_variables import WINDOW
 from sqlite_requests import db
 from cubes_game.animatoins import do_animation
+from common_module import game_action
 
 from dialog.main import dialog
 
@@ -84,17 +85,7 @@ class CubesGame(ModalView):
         Clock.schedule_once(self.go_clock, 0.01)
 
     def on_open(self):
-        self.open_dialog()
-
-    def open_dialog(self):
-        self.dialog.location = self.current_location.loc_id
-        self.dialog.level = self.current_level.lvl_id
-
-        if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == 'stub' or self.dialog.current_npc_speech == (
-                '', ''):
-            return
-
-        self.dialog.open()
+        game_action.execute_action('before', self.current_location.loc_id, self.current_level.lvl_id)
 
     def open_shop(self):
         pass
@@ -569,19 +560,7 @@ class GameEnding(ModalView):
             pass
 
     def on_dismiss(self):
-        self.execute_action()
-
-    def execute_action(self):
-
-        actions = db.get_actions(self.game.current_location.loc_id, self.game.current_level.lvl_id)  # (action_id, action_type, object_id)
-
-        for string in actions:
-            if string[1] == 'open_skill':
-                db.unblock_skill(string[2])
-            elif string[1] == 'open_manuscript':
-                db.unblock_manuscript(string[2])
-
-        db.change_actions_completed([x[0] for x in actions])
+        game_action.execute_action('after', self.game.current_location.loc_id, self.game.current_level.lvl_id)
 
 
 class Cube(Button):

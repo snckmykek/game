@@ -1,0 +1,10 @@
+<Transition>:
+    current_opacity: 0
+    background: 'images/miniatures/fon.png'
+    Label:
+        canvas.before:
+            Color:
+                rgba: (0, 0, 0, root.current_opacity)
+            Rectangle:
+                size: self.size
+                pos: self.pos

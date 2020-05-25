@@ -1,0 +1,33 @@
+<Miniature>:
+    background_color: (1, 1, 1, 0)
+    background: 'images/miniatures/fon.png'
+    miniature_image: 'images/miniatures/farewell_note.png'
+    miniature_text: ''
+    opacity: 0
+    on_touch_down: root.show_next_miniature()
+    FloatLayout:
+        canvas.before:
+            Rectangle:
+                size: root.size
+                pos: root.pos
+                source: root.miniature_image
+        Label:
+            pos_hint: {'center_x': .5, 'y': .1}
+            id: current_text
+            size_hint: None, None
+            multiline: True
+            color: (1, 1, 1, 1)
+            text_size: root.width*.7, None
+            height: self.texture_size[1] + 5
+            width: self.texture_size[0] + 5
+            text: root.miniature_text
+            halign: 'center'
+            canvas.before:
+                Color:
+                    rgba: (.0, .0, .0, .4)
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [15, ]
+
+

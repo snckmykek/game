@@ -6,7 +6,6 @@ from kivy.properties import ObjectProperty
 from kivy.graphics import Rectangle, Color, Line
 from kivy.uix.widget import Widget
 from sqlite_requests import db
-from dialog.main import dialog
 from kivy.animation import Animation
 import random
 from treasure_chest.main import TreasureChest
@@ -16,6 +15,7 @@ from store.main import storescreen as store
 from cubes_game.main import CubesGame
 from cubes_game.rounds import rounds
 from cubes_game.animatoins import do_animation
+from common_module import game_action
 
 Builder.load_file(r'world_map/main.kv')
 
@@ -74,8 +74,6 @@ class WorldMap(ModalView):
     def __init__(self, **kwargs):
         super(WorldMap, self).__init__(**kwargs)
 
-        self.dialog = dialog
-        self.is_first_open_location = True
         self.is_treasure_hunting = True
 
         self.cubes_game = CubesGame()
@@ -155,25 +153,14 @@ class WorldMap(ModalView):
             but.center_x = open_close_menu_button.center_x
             self.ids.rl.add_widget(but)
 
-    def open_dialog(self):
-        self.dialog.location = self.current_location.loc_id
-        self.dialog.level = '-1'
-
-        if self.dialog.dialog_is_completed() or self.dialog.current_npc_speech == ('', ''):
-            return
-
-        self.dialog.open()
-
     def on_pre_open(self):
-        self.is_first_open_location = True
+        current_lvl_id = db.get_val_from_global('current_lvl_id')
+        game_action.execute_action('location', self.current_location.loc_id, current_lvl_id)
         if self.is_treasure_hunting:
             self.locations = locations
         else:
             self.locations = locations_mine
         self.open_location()
-
-    def on_open(self):
-        self.open_dialog()
 
     def open_close_menu(self, instance):
         if instance.parameter == 'open':
@@ -243,11 +230,6 @@ class WorldMap(ModalView):
                 else:
                     round_button.change_stars(-1)
             self.world_map.add_widget(round_button)
-
-        if (not self.is_first_open_location) and (next_location != 'this'):
-            self.open_dialog()
-        else:
-            self.is_first_open_location = False
 
     def play(self, *l):
         try:

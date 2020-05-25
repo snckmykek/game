@@ -1,7 +1,6 @@
 import sqlite3
 from kivy.clock import Clock
 import xlrd
-import global_variables
 
 
 class Database(object):
@@ -191,7 +190,40 @@ class Database(object):
                          'lvl_id INTEGER,'
                          'action_type TEXT,'
                          'object_id INTEGER,'
+                         'when_to_call TEXT,'
                          'is_completed INTEGER)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS speech('
+                         'id INTEGER,'
+                         'speech_order INTEGER,'
+                         'speaker TEXT,'
+                         'position TEXT,'
+                         'text TEXT,'
+                         'lang TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS heroes('
+                         'id TEXT,'
+                         'name TEXT,'
+                         'image TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS miniatures('
+                         'id INTEGER,'
+                         'miniature_order INTEGER,'
+                         'image TEXT,'
+                         'text TEXT,'
+                         'lang TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS languages('
+                         'lang TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS game_settings('
+                         'setting TEXT,'
+                         'value TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS game_settings_lang('
+                         'setting TEXT,'
+                         'name TEXT,'
+                         'lang TEXT)')
 
     def insert_data(self):
 
@@ -212,12 +244,35 @@ class Database(object):
         manuscript = self.cur.fetchall()[0]
 
         return manuscript
+    
+    def get_game_settings(self):
+        self.cur.execute('SELECT game_settings.setting, game_settings_lang.name, game_settings.value '
+                         'FROM game_settings JOIN game_settings_lang '
+                         'ON game_settings.setting = game_settings_lang.setting')
+
+        return [{stng[0]: {'name': stng[1], 'value': stng[2]}} for stng in self.cur.fetchall()]
+
+    def get_val_from_global(self, key):
+        self.cur.execute('SELECT value FROM global WHERE key = "{}"'.format(key))
+        try:
+            return self.cur.fetchall()[0][0]
+        except IndexError:
+            return
+
+    def get_val_from_game_settings(self, setting):
+        self.cur.execute('SELECT value FROM game_settings WHERE setting = "{}"'.format(setting))
+        try:
+            return self.cur.fetchall()[0][0]
+        except IndexError:
+            return
 
     def get_lvl_settings(self, loc_id=None):
+        LANGUAGE = self.get_val_from_game_settings('LANGUAGE')
+
         self.cur.execute('SELECT lvl_settings.*, lvl_settings_lang.name FROM lvl_settings INNER JOIN lvl_settings_lang '
                          'ON lvl_settings.id = lvl_settings_lang.id AND lvl_settings.loc_id = lvl_settings_lang.loc_id '
-                         'WHERE lvl_settings.loc_id = "{0}" '
-                         'AND lvl_settings_lang.lang = "{1}"'.format(loc_id, global_variables.LANGUAGE))
+                         'WHERE lvl_settings.loc_id = "{0}" AND lvl_settings_lang.lang = "{1}"'
+                         .format(loc_id, LANGUAGE))
         return self.cur.fetchall()
 
     def get_current_result(self, loc_id, lvl_id, scores):
@@ -265,22 +320,26 @@ class Database(object):
             return False
 
     def get_skills(self, manuscript_id=None):
+        LANGUAGE = self.get_val_from_game_settings('LANGUAGE')
+
         if manuscript_id is None:
             request = 'SELECT skills.*, skills_lang.name, skills_lang.description FROM skills JOIN skills_lang ' \
-                      'ON skills.id = skills_lang.id WHERE skills_lang.lang = "{}"'.format(global_variables.LANGUAGE)
+                      'ON skills.id = skills_lang.id WHERE skills_lang.lang = "{}"'.format(LANGUAGE)
         else:
             request = 'SELECT skills.*, skills_lang.name, skills_lang.description FROM skills JOIN skills_lang ' \
                       'ON skills.id = skills_lang.id WHERE skills.manuscript_id = "{}" AND skills_lang.lang = "{}"'\
-                    .format(manuscript_id, global_variables.LANGUAGE)
+                    .format(manuscript_id, LANGUAGE)
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
 
     def get_items(self):
+        LANGUAGE = self.get_val_from_game_settings('LANGUAGE')
+
         request = 'SELECT items_and_resources.*, items_and_resources_lang.name, items_and_resources_lang.description ' \
                   'FROM items_and_resources JOIN items_and_resources_lang ' \
                   'ON items_and_resources.id = items_and_resources_lang.id WHERE items_and_resources_lang.lang = "{}"'\
-            .format(global_variables.LANGUAGE)
+            .format(LANGUAGE)
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
@@ -350,17 +409,36 @@ class Database(object):
         self.cur.execute('SELECT scores FROM levels WHERE loc_id = "{}" AND lvl_id = "{}"'.format(loc_id, lvl_id))
         return [x[0] for x in self.cur.fetchall()]
 
-    def get_actions(self, loc_id=-1, lvl_id=-1, action_id=-1, action_type=None):
+    def get_actions(self, when_to_call, loc_id=-1, lvl_id=-1, action_id=-1, action_type=None):
 
         if loc_id != -1 and lvl_id != -1:
             request = 'SELECT id, action_type, object_id FROM actions ' \
-                      'WHERE loc_id = "{}" AND lvl_id = "{}" AND is_completed = "0"'.format(loc_id, lvl_id)
+                      'WHERE loc_id = "{}" AND lvl_id = "{}" AND is_completed = "0"' \
+                      'AND when_to_call = "{}"'.format(loc_id, lvl_id, when_to_call)
         else:
             request = ''  # stub
 
         self.cur.execute(request)
 
         return self.cur.fetchall()
+
+    def get_speech_list(self, speech_id):
+        LANGUAGE = self.get_val_from_game_settings('LANGUAGE')
+
+        self.cur.execute('SELECT heroes.name, speech.position, speech.text, heroes.image FROM speech '
+                         'JOIN heroes ON speech.speaker = heroes.id '
+                         'WHERE speech.id = "{}" AND speech.lang = "{}"'
+                         'ORDER BY speech_order'.format(speech_id, LANGUAGE))
+        return [{'speaker': speech[0], 'position': speech[1], 'text': speech[2].replace('\\n', '\n'),
+                 'image': speech[3]} for speech in self.cur.fetchall()]
+
+    def get_miniature_list(self, miniature_id):
+        LANGUAGE = self.get_val_from_game_settings('LANGUAGE')
+
+        self.cur.execute('SELECT image, text FROM miniatures '
+                         'WHERE id = "{}" AND lang = "{}"'
+                         'ORDER BY miniature_order'.format(miniature_id, LANGUAGE))
+        return [{'image': miniature[0], 'text': miniature[1]} for miniature in self.cur.fetchall()]
 
     def change_actions_completed(self, action_ids, is_completed=1):
         if action_ids:

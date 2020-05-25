@@ -2,9 +2,11 @@
   <dictionary name="snckmykek">
     <words>
       <w>firstshards</w>
+      <w>halign</w>
       <w>itembox</w>
       <w>screenstore</w>
       <w>shopitem</w>
+      <w>stng</w>
       <w>storescreen</w>
       <w>worldmap</w>
     </words>
