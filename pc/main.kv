@@ -1,0 +1,24 @@
+<Computer>:
+    background_color: (1, 1, 1, 0)
+    background: 'images/miniatures/fon.png'
+    opacity: 0
+    FloatLayout:
+        BoxLayout:
+            size_hint: None, None
+            width: root.width
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            canvas.before:
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+                    source: 'images/computer/computer.png'
+        GridLayout:
+            cols: 2
+            Button:
+                background_normal: 'images/computer/e-mail.png'
+            Button:
+                background_normal: 'images/computer/shop.png'
+            Widget:
+            Widget:
+
+

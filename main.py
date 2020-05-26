@@ -15,13 +15,10 @@ from kivy.animation import Animation
 
 from home.main import Home
 from dialog.main import dialog
-from speech_parser import speech_parser
 from sqlite_requests import db
 from common_module import game_action
 from miniature.main import miniature
 from kivy.clock import Clock
-
-speech_parser()
 
 Builder.load_file(r'mainscreen.kv')
 

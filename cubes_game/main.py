@@ -94,8 +94,7 @@ class CubesGame(ModalView):
         self.world_map.open_location(self.current_location)
 
     def on_dismiss(self):
-        pass
-        # self.open_dialog()
+        game_action.execute_action('after', self.current_location.loc_id, self.current_level.lvl_id)
 
     def end_game(self, *l):
         self.ge.game = self
@@ -558,9 +557,6 @@ class GameEnding(ModalView):
             # stub получить количество пройденных уровней, установить нужное кол-во звезд
             # (не надо проверку, тупо всегда перезапись)
             pass
-
-    def on_dismiss(self):
-        game_action.execute_action('after', self.game.current_location.loc_id, self.game.current_level.lvl_id)
 
 
 class Cube(Button):

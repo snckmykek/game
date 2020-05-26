@@ -191,7 +191,8 @@ class Database(object):
                          'action_type TEXT,'
                          'object_id INTEGER,'
                          'when_to_call TEXT,'
-                         'is_completed INTEGER)')
+                         'dependence TEXT,'
+                         'is_available INTEGER)')
 
         self.cur.execute('CREATE TABLE IF NOT EXISTS speech('
                          'id INTEGER,'
@@ -209,6 +210,15 @@ class Database(object):
         self.cur.execute('CREATE TABLE IF NOT EXISTS miniatures('
                          'id INTEGER,'
                          'miniature_order INTEGER,'
+                         'image TEXT,'
+                         'size_hint_x REAL,'
+                         'size_hint_y REAL,'
+                         'text TEXT,'
+                         'lang TEXT)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS information('
+                         'id INTEGER,'
+                         'information_order INTEGER,'
                          'image TEXT,'
                          'text TEXT,'
                          'lang TEXT)')
@@ -411,12 +421,9 @@ class Database(object):
 
     def get_actions(self, when_to_call, loc_id=-1, lvl_id=-1, action_id=-1, action_type=None):
 
-        if loc_id != -1 and lvl_id != -1:
-            request = 'SELECT id, action_type, object_id FROM actions ' \
-                      'WHERE loc_id = "{}" AND lvl_id = "{}" AND is_completed = "0"' \
-                      'AND when_to_call = "{}"'.format(loc_id, lvl_id, when_to_call)
-        else:
-            request = ''  # stub
+        request = 'SELECT id, action_type, object_id FROM actions ' \
+                  'WHERE loc_id = "{}" AND lvl_id = "{}" AND is_available = "1"' \
+                  'AND when_to_call = "{}"'.format(loc_id, lvl_id, when_to_call)
 
         self.cur.execute(request)
 
@@ -435,19 +442,52 @@ class Database(object):
     def get_miniature_list(self, miniature_id):
         LANGUAGE = self.get_val_from_game_settings('LANGUAGE')
 
-        self.cur.execute('SELECT image, text FROM miniatures '
+        self.cur.execute('SELECT image, text, size_hint_x, size_hint_y FROM miniatures '
                          'WHERE id = "{}" AND lang = "{}"'
                          'ORDER BY miniature_order'.format(miniature_id, LANGUAGE))
-        return [{'image': miniature[0], 'text': miniature[1]} for miniature in self.cur.fetchall()]
+        return [{'image': miniature[0], 'text': miniature[1],
+                 'size_hint_x': miniature[2], 'size_hint_y': miniature[3]} for miniature in self.cur.fetchall()]
 
-    def change_actions_completed(self, action_ids, is_completed=1):
+    def get_information_list(self, information_id):
+        LANGUAGE = self.get_val_from_game_settings('LANGUAGE')
+
+        self.cur.execute('SELECT image, text FROM information '
+                         'WHERE id = "{}" AND lang = "{}"'
+                         'ORDER BY information_order'.format(information_id, LANGUAGE))
+        result = self.cur.fetchall()[0]
+        return {'background': result[0], 'text': result[1]}
+
+    def change_actions_completed(self, action_ids, is_available=0):
         if action_ids:
-            request = 'UPDATE actions SET is_completed = "{}" WHERE id IN ('.format(is_completed)
-            for action in action_ids:
-                request += '"{}",'.format(action)
-            request = request[:-1] + ')'
+
+            request = 'UPDATE actions SET is_available = "{}" WHERE id IN ({})'\
+                .format(is_available, self.make_list_to_str(action_ids))
+
             self.cur.execute(request)
             self.commit()
+
+            # Получаем зависимые экшены
+            request = 'SELECT dependence FROM actions WHERE dependence != "-1.0" AND id IN ({})'\
+                .format(self.make_list_to_str(action_ids))
+            self.cur.execute(request)
+
+            dependence = list()  # Массив всех зависимых экшенов
+            for string in self.cur.fetchall():
+                [dependence.append(x) for x in string[0].split('.')]  # В БД айди разделены точкой
+
+            # Активируем зависимые экшены
+            request = 'UPDATE actions SET is_available = "{}" WHERE id IN ({})'\
+                .format(int(not is_available), self.make_list_to_str(dependence))
+            self.cur.execute(request)
+            self.commit()
+
+    def make_list_to_str(self, lst):
+        output = ''
+        for item in lst:
+            output += '"{}",'.format(item)
+        output = output[:-1]
+
+        return output
 
     def change_skill_quantity(self, skill_id, quantity):
         self.cur.execute('UPDATE skills SET quantity = quantity + {} WHERE id = "{}"'.format(quantity, skill_id))
@@ -566,63 +606,6 @@ class Database(object):
         self.cur.execute(request)
 
         Clock.schedule_once(self.commit)
-
-    def _insert_info(self, values=None):
-        request = 'INSERT INTO info VALUES('
-        for val in values:
-            request += '"{}",'.format(val)
-        request = request[:-1] + ')'
-
-        self.cur.execute(request)
-
-    #   commit() в speech_parser.py
-
-    def dialog_is_completed(self, dialog):
-        request = 'SELECT level_info_number FROM info WHERE location = "{}" AND level = "{}" AND is_completed = "1"' \
-            .format(dialog.location, dialog.level)
-
-        self.cur.execute(request)
-
-        if self.cur.fetchall():
-            return True
-        else:
-            return False
-
-    def fill_info(self, dialog):
-
-        request = 'SELECT level_info_number, level_info FROM info WHERE location = "{}" AND level = "{}" ' \
-                  'AND level_question_number = "{}"'.format(dialog.location, dialog.level,
-                                                            dialog.current_player_speech[0])
-
-        self.cur.execute(request)
-        level_info = self.cur.fetchall()
-
-        try:
-            dialog.current_npc_speech = level_info[0]
-        except IndexError:
-            dialog.current_npc_speech = 'stub'
-
-        self.set_info_is_completed(dialog)
-
-        dialog.all_player_speech = self.get_all_questions(dialog)
-
-    def get_all_questions(self, dialog):
-        request = 'SELECT level_question_number, level_question FROM info WHERE location = "{}" AND level = "{}"' \
-            .format(dialog.location, dialog.level)
-
-        self.cur.execute(request)
-        return list(self.cur.fetchall())
-
-    def set_info_is_completed(self, dialog):
-        request = 'UPDATE info SET is_completed = "1" WHERE ' \
-                  'location = "{}" AND level = "{}" AND level_question_number = "{}"' \
-            .format(dialog.location, dialog.level, dialog.current_player_speech[0])
-        self.cur.execute(request)
-
-        self.commit()
-
-    def clear_is_completed(self):
-        self.cur.execute('UPDATE info SET is_completed = "0"')
 
     def commit(self, *l):
         self.con.commit()

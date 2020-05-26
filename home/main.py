@@ -11,6 +11,7 @@ from kivy.clock import Clock
 from sqlite_requests import db
 import random
 from common_module import game_action
+from pc.main import computer
 
 from world_map.main import WorldMap, locations_mine, locations
 
@@ -22,8 +23,15 @@ class Home(ModalView):
     def __init__(self, **kwargs):
         super(Home, self).__init__(**kwargs)
         self.world_map = WorldMap
+        self.computer = computer
+
+        self.world_map.bind(on_disable=self.check_actions)
+        self.computer.bind(on_disable=self.check_actions)
 
     def on_open(self):
+        self.check_actions()
+
+    def check_actions(self):
         current_loc_id = db.get_val_from_global('current_loc_id')
         current_lvl_id = db.get_val_from_global('current_lvl_id')
         game_action.execute_action('home', current_loc_id, current_lvl_id)
@@ -38,11 +46,8 @@ class Home(ModalView):
         self.world_map.current_location = locations_mine[0]
         self.world_map.open()
 
-    def open_game_store(self):
-        pass
-
-    def open_daily_bonus(self):
-        pass
+    def open_computer(self):
+        self.computer.open()
 
 
 Home = Home()

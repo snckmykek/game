@@ -1,0 +1,30 @@
+#:import WINDOW global_variables.WINDOW
+
+<Information>:
+    background_color: (1, 1, 1, 0)
+    opacity: 0
+    label_background: ''
+    background: 'images/transparent_background.png'
+    information_text: ''
+    on_touch_up: root.deferred_dismiss()
+    FloatLayout:
+        orientation: 'vertical'
+        Label:
+            color: (0, 0, 0, 1)
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            id: current_text
+            size_hint: None, None
+            multiline: True
+            text_size: root.width*.8, None
+            height: self.texture_size[1] + 25
+            width: self.texture_size[0] + 25
+            text: root.information_text
+            halign: 'center'
+            canvas.before:
+                Color:
+                    rgba: (1, 1, 1, 1)
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    source: root.label_background
+                    radius: [15, ]
