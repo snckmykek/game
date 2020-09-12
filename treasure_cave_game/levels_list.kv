@@ -1,3 +1,5 @@
+#:import WINDOW global_variables.WINDOW
+
 <LevelsList>:
     background: ''
     ScrollView:
@@ -17,7 +19,7 @@
 
 <LevelBox>:
     size_hint_y: None
-    height: 50
+    height: WINDOW.height/ 10
     canvas.before:
         Color:
             rgba: (.36, .17, .05, 1)

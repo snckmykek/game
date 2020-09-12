@@ -1,6 +1,6 @@
 import sqlite3
 from kivy.clock import Clock
-import xlrd 
+import xlrd
 
 
 class Database(object):
