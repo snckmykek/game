@@ -7,8 +7,10 @@
                 id: levels
                 size_hint_y: None
                 height: self.minimum_height
+                on_double_tap: root.copy_text(self)
         ScrollView:
             TextInput:
                 id: level_settings
                 size_hint_y: None
                 height: self.minimum_height
+                on_double_tap: root.copy_text(self)

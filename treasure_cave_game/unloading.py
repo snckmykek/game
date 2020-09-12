@@ -46,5 +46,8 @@ class Unloading(ModalView):
 
         self.ids.level_settings.text = level_settings_text
 
+    def copy_text(self, ti):
+        ti.copy(ti.text)
+
 
 unloading = Unloading()
