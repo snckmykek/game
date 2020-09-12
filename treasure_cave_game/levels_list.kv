@@ -1,0 +1,40 @@
+<LevelsList>:
+    background: ''
+    ScrollView:
+        scroll_y: 0
+        canvas.before:
+            Color:
+                rgba: (.25, .09, .02, 1)
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        GridLayout:
+            id: levelslist_kv
+            size_hint_y: None
+            height: self.minimum_height
+            cols: 1
+            spacing: 10
+
+<LevelBox>:
+    size_hint_y: None
+    height: 50
+    canvas.before:
+        Color:
+            rgba: (.36, .17, .05, 1)
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    Label:
+        id: level_text
+    Button:
+        id: edit_button
+        background_normal: ''
+        background_color: (.36, .17, .05, 1)
+        text: 'edit'
+        on_release: root.edit_level()
+    Button:
+        id: play_button
+        background_normal: ''
+        background_color: (.36, .17, .05, 1)
+        text: 'play'
+        on_release: root.open_level()

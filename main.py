@@ -18,10 +18,10 @@ from dialog.main import dialog
 from sqlite_requests import db
 from common_module import game_action
 from miniature.main import miniature
+from treasure_cave_game.levels_list import levels_list
 from kivy.clock import Clock
 
 Builder.load_file(r'mainscreen.kv')
-
 
 class Menu(BoxLayout):
 
@@ -45,7 +45,7 @@ class Menu(BoxLayout):
         self.dialog.open()
 
     def delete_table(self, table='speech'):
-        miniature.open()
+        levels_list.open()
 
 
 class CubesApp(App):

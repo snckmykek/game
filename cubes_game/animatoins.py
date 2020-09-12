@@ -49,7 +49,7 @@ def get_animation_from_id(animation_id, obj, params):
                   'combo': combo_animation}
 
     current_func = animations.get(animation_id,
-                                  decrease_animation(obj, params))  # Если значения ключа нет, вернет дефолтную анимацию
+                                  decrease_animation)  # Если значения ключа нет, вернет дефолтную анимацию
 
     return current_func(obj, params)
 

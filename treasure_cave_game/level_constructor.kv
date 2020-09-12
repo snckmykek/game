@@ -1,0 +1,110 @@
+<ConstructField>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas:
+            Color:
+                rgba: (.36, .17, .05, 1)
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            size_hint_y: .05
+            Button:
+                id: level_text
+                on_release: root.save_level()
+            TextInput:
+                id: gold
+            TextInput:
+                id: exp
+            TextInput:
+                id: dynamite
+        BoxLayout:
+            id: game_box
+            orientation: 'vertical'
+            size_hint_y: .70
+
+
+            AnchorLayout:
+                anchor_x: 'center'
+                anchor_y: 'center'
+                RelativeLayout:
+                    size_hint: None, None
+                    id: rl
+                    StencilView: # field with cubes
+                        id: playing_field
+                        canvas:
+                            Color:
+                                rgba: (.30, .12, .03, 1)
+                            Rectangle:
+                                size: self.size
+                                pos: self.pos
+
+        BoxLayout:
+            size_hint_y: .05
+            ToggleButton:
+                id: car
+                group: 'a'
+                state: 'down'
+                text: 'C'
+            ToggleButton:
+                id: stone
+                group: 'a'
+                text: 'S'
+            ToggleButton:
+                id: item
+                group: 'a'
+                text: 'I'
+            ToggleButton:
+                id: key
+                group: 'a'
+                text: 'K'
+            ToggleButton:
+                id: cancel
+                group: 'a'
+                text: 'X'
+
+<VisualButton>:
+    size_hint: None, None
+    background_color: (.65, .65, .65, 1)
+
+
+<ItemChooser>
+    ScrollView:
+        size_hint_y: .7
+        canvas.before:
+            Color:
+                rgba: (1, 1, 1, .2)
+            Rectangle:
+                source: 'images/items/fon.jpg'
+                size: self.size
+                pos: self.pos
+        GridLayout:
+            id: inventory_box
+            cols: 1
+            size_hint_y: None
+            height: self.minimum_height
+            spacing: 10
+
+<ItemBoxItemChooser>:
+    item_id: 0
+    size_hint_y: None
+    padding: 5
+    canvas:
+        Color:
+            rgba: (1, 1, 1, .2)
+        Rectangle:
+            source: 'images/items/fon2.jpg'
+            size: self.size
+            pos: self.pos
+    Item:
+        id: item_button
+        size_hint_x: None
+        width: self.height
+
+
+<ItemItemChooser>:
+    name: ''
+    item_id: 0
+    description: ''
+    image: ''
+    border: [0, 0, 0, 0]

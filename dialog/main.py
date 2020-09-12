@@ -1,4 +1,4 @@
-# from sqlite_requests import db
+from sqlite_requests import db
 from kivy.uix.modalview import ModalView
 from kivy.lang.builder import Builder
 from kivy.uix.boxlayout import BoxLayout
@@ -29,6 +29,7 @@ class Dialog(ModalView):
         self.letter_delay = .05
         self.stop = False
         self.queue = 0
+        self.speech_list = db.get_speech_list(0)
 
     def set_stop(self):
         self.stop = True

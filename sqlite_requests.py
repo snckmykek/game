@@ -235,6 +235,25 @@ class Database(object):
                          'name TEXT,'
                          'lang TEXT)')
 
+        self.cur.execute('CREATE TABLE IF NOT EXISTS treasure_cave_level_settings('
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
+                         'purpose STRING,'
+                         'item_id INTEGER,'
+                         'armor INTEGER,'
+                         'pos_x INTEGER,'
+                         'pos_y INTEGER,'
+                         'size_x INTEGER,'
+                         'size_y INTEGER)')
+
+        self.cur.execute('CREATE TABLE IF NOT EXISTS treasure_cave_levels('
+                         'loc_id INTEGER,'
+                         'lvl_id INTEGER,'
+                         'is_completed INTEGER,'
+                         'exp INTEGER,'
+                         'gold INTEGER,'
+                         'dynamite INTEGER)')
+
     def insert_data(self):
 
         for key in self.dict_exel.keys():
@@ -254,7 +273,7 @@ class Database(object):
         manuscript = self.cur.fetchall()[0]
 
         return manuscript
-    
+
     def get_game_settings(self):
         self.cur.execute('SELECT game_settings.setting, game_settings_lang.name, game_settings.value '
                          'FROM game_settings JOIN game_settings_lang '
@@ -303,8 +322,8 @@ class Database(object):
 
         if lvl_id < 0:  # тогда чекаем ласт уровень прошлой игры
             request = 'SELECT stars, exp, gold FROM completed_levels WHERE loc_id = "{0}" ' \
-                      'AND lvl_id = (SELECT MAX(id) FROM lvl_settings WHERE loc_id = "{0}")'\
-                .format(loc_id-1)
+                      'AND lvl_id = (SELECT MAX(id) FROM lvl_settings WHERE loc_id = "{0}")' \
+                .format(loc_id - 1)
         else:
             request = 'SELECT stars, exp, gold FROM completed_levels WHERE loc_id = "{0}" ' \
                       'AND lvl_id = "{1}"'.format(loc_id, lvl_id)
@@ -337,8 +356,8 @@ class Database(object):
                       'ON skills.id = skills_lang.id WHERE skills_lang.lang = "{}"'.format(LANGUAGE)
         else:
             request = 'SELECT skills.*, skills_lang.name, skills_lang.description FROM skills JOIN skills_lang ' \
-                      'ON skills.id = skills_lang.id WHERE skills.manuscript_id = "{}" AND skills_lang.lang = "{}"'\
-                    .format(manuscript_id, LANGUAGE)
+                      'ON skills.id = skills_lang.id WHERE skills.manuscript_id = "{}" AND skills_lang.lang = "{}"' \
+                .format(manuscript_id, LANGUAGE)
         self.cur.execute(request)
 
         return list(self.cur.fetchall())
@@ -348,7 +367,7 @@ class Database(object):
 
         request = 'SELECT items_and_resources.*, items_and_resources_lang.name, items_and_resources_lang.description ' \
                   'FROM items_and_resources JOIN items_and_resources_lang ' \
-                  'ON items_and_resources.id = items_and_resources_lang.id WHERE items_and_resources_lang.lang = "{}"'\
+                  'ON items_and_resources.id = items_and_resources_lang.id WHERE items_and_resources_lang.lang = "{}"' \
             .format(LANGUAGE)
         self.cur.execute(request)
 
@@ -366,6 +385,16 @@ class Database(object):
 
         return items
 
+    def get_item_image_by_id(self, id):
+
+        request = 'SELECT items_and_resources.image FROM items_and_resources WHERE items_and_resources.id = "{}"' \
+            .format(id)
+        self.cur.execute(request)
+        try:
+            return self.cur.fetchall()[0][0]
+        except IndexError:
+            return ''
+
     def get_levels_colors_bonuses(self, loc_id, lvl_id):
         request = 'SELECT colors.r, colors.g, colors.b, colors.a, ' \
                   'SUM(items_and_resources.lvl) FROM game_bonuses ' \
@@ -373,8 +402,8 @@ class Database(object):
                   'LEFT JOIN colors ON game_bonuses.object_id = colors.id ' \
                   'WHERE game_bonuses.object_id IN ' \
                   '(SELECT color_id FROM level_colors WHERE loc_id = "{}" AND lvl_id = "{}")' \
-                  'GROUP BY colors.r, colors.g, colors.b, colors.a'\
-                  .format(loc_id, lvl_id)
+                  'GROUP BY colors.r, colors.g, colors.b, colors.a' \
+            .format(loc_id, lvl_id)
 
         self.cur.execute(request)
 
@@ -395,8 +424,36 @@ class Database(object):
         self.cur.execute(request)
         return [x[0] for x in self.cur.fetchall()]
 
+    def get_all_treasure_game_levels(self):
+        request = 'SELECT loc_id, lvl_id FROM treasure_cave_levels'
+        self.cur.execute(request)
+        return self.cur.fetchall()
+
+    def get_treasure_game_level(self, loc_id, lvl_id):
+        request = 'SELECT loc_id, lvl_id, exp, gold, dynamite FROM treasure_cave_levels ' \
+                  'WHERE loc_id = "{}" AND lvl_id = "{}"'.format(loc_id, lvl_id)
+        self.cur.execute(request)
+        levels = self.cur.fetchall()
+        try:
+            return levels[0]
+        except IndexError:
+            return None
+
+    def get_treasure_game_level_settings(self, loc_id, lvl_id):
+        request = 'SELECT loc_id, lvl_id, purpose, item_id, armor, pos_x, pos_y, size_x, size_y ' \
+                  'FROM treasure_cave_level_settings ' \
+                  'WHERE loc_id = "{}" AND lvl_id = "{}"'.format(loc_id, lvl_id)
+        self.cur.execute(request)
+        return self.cur.fetchall()
+
+    def get_all_treasure_game_level_settings(self):
+        request = 'SELECT loc_id, lvl_id, purpose, item_id, armor, pos_x, pos_y, size_x, size_y ' \
+                  'FROM treasure_cave_level_settings'
+        self.cur.execute(request)
+        return self.cur.fetchall()
+
     def get_manuscript_lvl_info(self, manuscript_id):
-        request = 'SELECT lvl, exp, exp_for_lvl FROM for_up_lvl WHERE lvl = "{}", object_type = "manuscript"'\
+        request = 'SELECT lvl, exp, exp_for_lvl FROM for_up_lvl WHERE lvl = "{}", object_type = "manuscript"' \
             .format(manuscript_id)
 
         self.cur.execute(request)
@@ -460,14 +517,14 @@ class Database(object):
     def change_actions_completed(self, action_ids, is_available=0):
         if action_ids:
 
-            request = 'UPDATE actions SET is_available = "{}" WHERE id IN ({})'\
+            request = 'UPDATE actions SET is_available = "{}" WHERE id IN ({})' \
                 .format(is_available, self.make_list_to_str(action_ids))
 
             self.cur.execute(request)
             self.commit()
 
             # Получаем зависимые экшены
-            request = 'SELECT dependence FROM actions WHERE dependence != "-1.0" AND id IN ({})'\
+            request = 'SELECT dependence FROM actions WHERE dependence != "-1.0" AND id IN ({})' \
                 .format(self.make_list_to_str(action_ids))
             self.cur.execute(request)
 
@@ -476,7 +533,7 @@ class Database(object):
                 [dependence.append(x) for x in string[0].split('.')]  # В БД айди разделены точкой
 
             # Активируем зависимые экшены
-            request = 'UPDATE actions SET is_available = "{}" WHERE id IN ({})'\
+            request = 'UPDATE actions SET is_available = "{}" WHERE id IN ({})' \
                 .format(int(not is_available), self.make_list_to_str(dependence))
             self.cur.execute(request)
             self.commit()
@@ -552,7 +609,7 @@ class Database(object):
         level = self.cur.fetchall()[0][0]
 
         # for max lvl
-        request = 'SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" AND object_type = "manuscript"'\
+        request = 'SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" AND object_type = "manuscript"' \
             .format(manuscript_id)
         self.cur.execute(request)
         max_exp = self.cur.fetchall()[0][0]
@@ -587,7 +644,7 @@ class Database(object):
         level = self.cur.fetchall()[0][0]
 
         # for max lvl
-        request = 'SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" AND object_type = "item"'\
+        request = 'SELECT MAX(exp_for_lvl) FROM for_up_lvl WHERE object_id = "{}" AND object_type = "item"' \
             .format(item_id)
         self.cur.execute(request)
         max_qty = self.cur.fetchall()[0][0]
@@ -604,6 +661,37 @@ class Database(object):
         request = 'UPDATE items_and_resources SET lvl = "{}", qty_for_next_lvl = "{}" ' \
                   'WHERE id = "{}"'.format(level, qty_for_next_level, item_id)
         self.cur.execute(request)
+
+        Clock.schedule_once(self.commit)
+
+    def set_treasure_cave_level(self, loc_id, lvl_id, exp, gold, dynamite):
+        self.cur.execute(
+            'SELECT COUNT() FROM treasure_cave_levels WHERE loc_id = "{}" AND lvl_id = "{}"'.format(loc_id, lvl_id))
+
+        if self.cur.fetchall()[0][0] == 0:
+            request = 'INSERT INTO treasure_cave_levels VALUES("{}","{}","{}","{}","{}","{}")' \
+                .format(loc_id, lvl_id, 0, exp, gold, dynamite)
+        else:
+            request = 'UPDATE treasure_cave_levels SET exp = "{}", gold = "{}", dynamite = "{}" WHERE ' \
+                      'loc_id = "{}" AND lvl_id = "{}"'.format(exp, gold, dynamite, loc_id, lvl_id)
+
+        self.cur.execute(request)
+
+        Clock.schedule_once(self.commit)
+
+    def set_treasure_cave_level_settings(self, loc_id, lvl_id, objects, a):
+        self.cur.execute(
+            'DELETE FROM treasure_cave_level_settings WHERE loc_id = "{}" AND lvl_id = "{}"'.format(loc_id, lvl_id))
+
+        for obj in objects:
+            try:
+                armor = int(obj.text)
+            except ValueError:
+                armor = 0
+            self.cur.execute(
+                'INSERT INTO treasure_cave_level_settings VALUES("{}","{}","{}","{}","{}","{}","{}","{}","{}")'
+                .format(loc_id, lvl_id, obj.purpose, obj.item_id, armor,
+                        obj.pos[0] / a, obj.pos[1] / a, obj.size[0] / a, obj.size[1] / a))
 
         Clock.schedule_once(self.commit)
 

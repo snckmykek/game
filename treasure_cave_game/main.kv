@@ -1,0 +1,41 @@
+<TreasureCaveGame>:
+    BoxLayout:
+        orientation: 'vertical'
+        canvas:
+            Color:
+                rgba: (.36, .17, .05, 1)
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        Label:
+            size_hint_y: .075
+            id: level_text
+        BoxLayout:
+            id: game_box
+            orientation: 'vertical'
+            size_hint_y: .70
+            AnchorLayout:
+                anchor_x: 'center'
+                anchor_y: 'center'
+                RelativeLayout:
+                    size_hint: None, None
+                    id: rl
+                    StencilView: # field with cubes
+                        id: playing_field
+                        canvas:
+                            Color:
+                                rgba: (.30, .12, .03, 1)
+                            Rectangle:
+                                size: self.size
+                                pos: self.pos
+        Widget:
+            size_hint_y: .075
+
+<VisualButton>:
+    size_hint: None, None
+    background_color: (.65, .65, .65, .1)
+
+<Car>:
+    dynamite: int(0)
+    background_color: (1, 1, 1, 1) if self.state == 'normal' else (1, .5, .5, 1)
+    text: str(self.dynamite)
