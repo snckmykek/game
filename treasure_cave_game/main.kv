@@ -1,12 +1,14 @@
 <TreasureCaveGame>:
+    background: ''
     BoxLayout:
         orientation: 'vertical'
         canvas:
             Color:
-                rgba: (.36, .17, .05, 1)
+                rgba: (.7, .7, .7, 1)
             Rectangle:
                 size: self.size
                 pos: self.pos
+                source: 'images/treasure_cave_game/fon2.png'
         Label:
             size_hint_y: .075
             id: level_text
@@ -24,10 +26,11 @@
                         id: playing_field
                         canvas:
                             Color:
-                                rgba: (.30, .12, .03, 1)
+                                rgba: (1, 1, 1, .3)
                             Rectangle:
                                 size: self.size
                                 pos: self.pos
+                                source: 'images/treasure_cave_game/fon.png'
         Widget:
             size_hint_y: .075
 

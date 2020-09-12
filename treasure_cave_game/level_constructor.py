@@ -67,6 +67,7 @@ class ConstructField(ModalView):
 
                     if but.purpose == 'car':
                         but.background_normal = 'images/treasure_cave_game/car.png'
+                        but.border = [0, 0, 0, 0]
                     elif but.purpose == 'stone':
                         but.text = str(armor)
                     elif but.purpose == 'key':

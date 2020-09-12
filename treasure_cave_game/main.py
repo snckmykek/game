@@ -77,10 +77,15 @@ class TreasureCaveGame(ModalView):
                     but.background_down = 'images/treasure_cave_game/car.png'
                     but.bind(on_press=self.change_current_car)
                     but.dynamite = dynamite
+                    but.border = [0, 0, 0, 0]
                 elif but.purpose == 'stone':
                     but.text = str(armor)
                     but.bind(on_release=self.boom)
+                    length = int(size_x if size_x > size_y else size_y)
+                    # but.background_normal = 'images/treasure_cave_game/stone{}.png'.format(str(length))
+                    # but.background_normal = 'images/treasure_cave_game/stone.png'
                     but.background_down = but.background_normal
+                    but.border = [10, 10, 10, 10]
                 elif but.purpose == 'key':
                     but.background_normal = 'images/treasure_cave_game/key.png'
                     but.border = [5, 5, 5, 5]
